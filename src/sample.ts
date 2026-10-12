@@ -23,7 +23,7 @@ export function sampleResponses(): Response[] {
   const base = Date.UTC(2026, 9, 29, 0, 30);
   const needW = { virt: 30, auto: 22, cn: 20, ai: 18, linux: 14, sec: 14 };
   for (let i = 0; i < 56; i++) {
-    const role = pickW({ infra: 40, sre: 16, dev: 18, mgr: 16, other: 10 });
+    const role = pickW({ infra: 36, sre: 16, dev: 18, planner: 18, partner: 8, other: 4 });
     const n1 = pickW(needW) as Response['needs'][number];
     const needs = [n1];
     if (rnd() < 0.7) { const n2 = pickW(needW) as typeof n1; if (n2 !== n1) needs.push(n2); }

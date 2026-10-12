@@ -27,7 +27,7 @@ export function recommend(a: CompleteAnswers, certs: Cert[] = CERTS): Rec[] {
     let role = 0;
     if (c.dev) role += a.role === 'dev' ? 1.5 : -1.5;
     if (a.role === 'sre' && c.d.includes('auto')) role += 0.6;
-    if ((a.role === 'mgr' || a.role === 'other') && c.lv <= 2) role += 1;
+    if (['planner', 'partner', 'other', 'mgr'].includes(a.role) && c.lv <= 2) role += 1;
     if (c.legacy) role -= 1.5;
     const score = dom + lvFit + prod + role + (dom > 0 ? 10 : 0);
     return { c, score, hit, gap, prodHit, dom };

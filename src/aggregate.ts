@@ -1,4 +1,4 @@
-import { NEED_KEYS, ROLES, TIMINGS, STYLES, PRODS, type Response } from './model';
+import { NEED_KEYS, ROLES, ROLE_ALIAS, TIMINGS, STYLES, PRODS, type Response } from './model';
 
 const zero = (keys: (string | number)[]) => Object.fromEntries(keys.map((k) => [k, 0])) as Record<string, number>;
 
@@ -12,7 +12,8 @@ export function agg(list: Response[], now = new Date()) {
   };
   Object.keys(ROLES).forEach((r) => (g.cross[r] = zero(NEED_KEYS)));
   const d0 = new Date(now); d0.setHours(0, 0, 0, 0);
-  list.forEach((r) => {
+  list.forEach((r0) => {
+    const r = { ...r0, role: ROLE_ALIAS[r0.role] || r0.role };
     r.needs.forEach((n, i) => { g.need[n]++; if (i === 0) g.first[n]++; g.cross[r.role][n]++; });
     g.role[r.role]++; g.exp[r.exp]++; g.timing[r.timing]++; g.style[r.style]++;
     r.prods.forEach((p) => g.prods[p]++);

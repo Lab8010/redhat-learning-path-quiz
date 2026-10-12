@@ -21,7 +21,7 @@ Red Hat Summit: Connect 2026 Tokyo(2026-10-29)の教育サービスブースで�
 
 ## デザイン
 
-- `prototype/index.html` の見た目を維持する。配色、フォント、余白は `docs/HANDOFF.md` の「デザイントークン」に従う。
+- `src/style.css` の見た目(プロトタイプ由来)を維持する。配色、フォント、余白は `docs/HANDOFF.md` の「デザイントークン」に従う。
 - 色は CSS 変数(トークン)で定義し、ライトとダークの両方に対応する。リテラルの色を部品に直接書かない。
 - 操作部品は、タブレットでも押しやすい大きさ(高さ 56px 以上)にする。
 - Red Hat の公式ロゴや商標資産は使わない。
@@ -36,5 +36,6 @@ npm run build    # 型チェック + 本番ビルド(dist/)
 npm run preview  # ビルド結果の確認
 ```
 
-- 運用設定(Forms の URL・entry、PIN)は `src/config.ts` だけにある。
+- 運用設定(Forms の URL・entry、API の URL、PIN)は `src/config.ts` だけにある。
+- 匿名回答の保存先は Cloudflare Workers + D1(`worker/`、手順は `docs/CLOUDFLARE_SETUP.md`)。Google Form へも並行送信する。
 - 本番でサンプルを見るときは URL の末尾に `#demo` を付ける(通常は非表示)。

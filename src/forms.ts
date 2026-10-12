@@ -1,4 +1,4 @@
-import { ANON_FORM, PERSONAL_FORM } from './config';
+import { ANON_FORM, API_BASE, PERSONAL_FORM } from './config';
 import type { Response } from './model';
 import type { Storage } from './storage';
 
@@ -33,8 +33,8 @@ export function anonPayload(r: Response): URLSearchParams {
   });
 }
 
-/** 1件送信する。no-cors のため応答の中身は読めず、通信が成立したかだけが分かる */
-async function submitOne(r: Response): Promise<boolean> {
+/** 匿名 Form に1件送信する。no-cors のため応答の中身は読めず、通信が成立したかだけが分かる */
+async function submitForm(r: Response): Promise<boolean> {
   try {
     await fetch(ANON_FORM.url, { method: 'POST', mode: 'no-cors', credentials: 'omit', referrerPolicy: 'no-referrer', body: anonPayload(r) });
     return true;
@@ -43,14 +43,37 @@ async function submitOne(r: Response): Promise<boolean> {
   }
 }
 
+/** API の本文。id は再送時の重複防止用の乱数で、匿名 Form や個人情報用 Forms には渡さない */
+export function apiPayload(r: Response) {
+  return { id: r.id, ts: r.ts, role: r.role, needs: r.needs, exp: r.exp, prods: r.prods, timing: r.timing, style: r.style, top: r.top };
+}
+
+/** API に1件送信する。受け付けられた(または二度と受け付けられない不正な値だった)ときは true */
+async function submitApi(r: Response): Promise<boolean> {
+  try {
+    const res = await fetch(`${API_BASE}/api/responses`, {
+      method: 'POST', credentials: 'omit', referrerPolicy: 'no-referrer',
+      headers: { 'content-type': 'application/json' }, body: JSON.stringify(apiPayload(r)),
+    });
+    if (res.ok) return true;
+    return res.status === 400; // 400 は再送しても通らないので諦める。429・5xx はあとで再送する
+  } catch {
+    return false;
+  }
+}
+
 let flushing = false;
-/** 未送信の回答を送る。回線が戻ったときにも呼ぶ */
+/** 未送信の回答を、有効な宛先ごとに送る。回線が戻ったときにも呼ぶ */
 export async function flushPending(store: Storage, onDone?: () => void): Promise<void> {
-  if (!ANON_FORM.enabled || flushing) return;
+  const useApi = !!API_BASE, useForm = ANON_FORM.enabled;
+  if ((!useApi && !useForm) || flushing) return;
   flushing = true;
   try {
     for (const r of store.list().filter((x) => !x.synced && !x.sample)) {
-      if (await submitOne(r)) store.patch(r.id, { synced: true });
+      let sentApi = !useApi || !!r.sentApi, sentForm = !useForm || !!r.sentForm;
+      if (!sentApi && (sentApi = await submitApi(r))) store.patch(r.id, { sentApi: true });
+      if (!sentForm && (sentForm = await submitForm(r))) store.patch(r.id, { sentForm: true });
+      if (sentApi && sentForm) store.patch(r.id, { synced: true });
       else break;
     }
   } finally {

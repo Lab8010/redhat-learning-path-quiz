@@ -15,8 +15,11 @@ describe('recommend', () => {
   it('領域 cn・レベル1・開発者', () => {
     expect(exams({ role: 'dev', exp: 1 })).toEqual(['EX180', 'EX188', 'EX288', 'EX328', 'EX378']);
   });
+  it('計画者・営業・その他は、旧 mgr と同じ結果(入門寄りの補正)', () => {
+    for (const role of ['planner', 'partner', 'other']) expect(exams({ role, exp: 1 })).toEqual(exams({ role: 'mgr', exp: 1 }));
+  });
   it('常に5件で、レベルが昇順になる', () => {
-    const roles = ['infra', 'sre', 'dev', 'mgr', 'other'];
+    const roles = ['infra', 'sre', 'dev', 'planner', 'partner', 'other'];
     const needs: CompleteAnswers['needs'][] = [['cn'], ['linux'], ['virt', 'auto'], ['ai'], ['sec', 'linux'], ['auto', 'ai']];
     for (const role of roles) for (const n of needs) for (const exp of [1, 2, 3, 4]) {
       const recs = recommend({ ...base, role, needs: n, exp });

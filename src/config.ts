@@ -25,9 +25,12 @@ export const ANON_FORM = {
     top: 'entry.2131904774',
     ts: 'entry.1140805444',
   },
-  /** false にすると送信せず、端末内に溜めるだけ(リハーサル・開発用) */
+  /** バックアップとして並行送信する。false にすると送らない(API だけ使う) */
   enabled: true,
 };
+
+/** 匿名回答を保存・集計する Cloudflare Worker の URL(docs/CLOUDFLARE_SETUP.md)。末尾の / は付けない。空なら、API は使わない */
+export const API_BASE = 'https://redhat-learning-path-quiz-api.lab8010.workers.dev';
 
 /** スタッフ画面の簡易 PIN。端末内の確認であり認証ではない(公開リポジトリで見える値)。 */
 export const STAFF_PIN = '1029';

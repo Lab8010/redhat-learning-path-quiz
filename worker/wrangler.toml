@@ -1,0 +1,14 @@
+name = "redhat-learning-path-quiz-api"
+main = "src/index.ts"
+compatibility_date = "2026-10-01"
+
+[vars]
+# アプリの公開元。ここ以外のブラウザからの書き込み・読み出しは拒否する
+ALLOWED_ORIGINS = "https://lab8010.github.io,http://localhost:5173,http://localhost:4173"
+# 全体で1分あたりに受け付ける回答数の上限
+MAX_PER_MIN = "120"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "redhat-learning-path-quiz"
+database_id = "a6b74881-9bc6-4b11-a111-2cc74f7c8be9"   # `wrangler d1 create redhat-learning-path-quiz` の出力で置き換える

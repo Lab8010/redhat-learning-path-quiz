@@ -1,6 +1,6 @@
 import './fonts';
 import './style.css';
-import { IDLE_MS, LINKS, STAFF_PIN, ANON_FORM } from './config';
+import { IDLE_MS, LINKS, STAFF_PIN, ANON_FORM, API_BASE } from './config';
 import { CERTS, EXPS, LVN, NEEDS, NEED_KEYS, PRODS, QS, ROLES, STYLES, TIMINGS, type Answers, type CompleteAnswers, type Domain, type Response } from './model';
 import { recommend, type Rec } from './recommend';
 import { agg, csvOf } from './aggregate';
@@ -8,6 +8,7 @@ import { createLocalStorage } from './storage';
 import { flushPending, personalFormUrl } from './forms';
 import { sampleResponses } from './sample';
 import { qrSvg } from './qr';
+import { fetchRows } from './remote';
 
 const store = createLocalStorage();
 const SAMPLES = sampleResponses();
@@ -17,10 +18,26 @@ const esc = (s: unknown) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;'
 type View = 'start' | 'q' | 'result' | 'pin' | 'staff';
 const emptyAnswers = (): Answers => ({ role: null, needs: [], exp: null, prods: [], timing: null, style: null });
 const S = {
+  src: (API_BASE ? 'remote' : 'local') as 'remote' | 'local',
   view: 'start' as View, qi: 0, a: emptyAnswers(), res: null as Response | null, recs: [] as Rec[],
   tab: 'dash', samples: import.meta.env.DEV || location.hash === '#demo', pinErr: false, confirmClear: false, csv: null as string | null,
 };
 let lastActive = Date.now();
+
+/* スタッフ画面の「全体」表示: 全端末の回答を Worker の API から読む。合言葉はタブを閉じると消える */
+const TOKEN_KEY = 'rhsc26_staff_token';
+const getToken = () => { try { return sessionStorage.getItem(TOKEN_KEY) || ''; } catch { return ''; } };
+const setToken = (t: string) => { try { t ? sessionStorage.setItem(TOKEN_KEY, t) : sessionStorage.removeItem(TOKEN_KEY); } catch { /* 保存できない環境では毎回入力 */ } };
+const R = { rows: null as Response[] | null, at: 0, err: '' };
+async function refreshRemote() {
+  const token = getToken();
+  if (!API_BASE || !token) return;
+  const res = await fetchRows(`${API_BASE}/api/rows`, token);
+  if (res.ok) { R.rows = res.rows; R.at = Date.now(); R.err = ''; }
+  else if (res.error === 'unauthorized') { setToken(''); R.rows = null; R.err = '合言葉が違います。'; }
+  else R.err = res.error === 'network' ? '取得できませんでした(回線を確認してください)。前回の表示を残しています。' : '想定外の応答でした。API の設定を確認してください。';
+  if (S.view === 'staff' && S.src === 'remote') render();
+}
 
 function resetAnswers() { S.a = emptyAnswers(); S.qi = 0; S.res = null; S.recs = []; }
 function go(view: View) { S.view = view; render(); window.scrollTo(0, 0); }
@@ -143,6 +160,7 @@ function barsOf(map: Record<string, number>, labels: Record<string, string>, tot
 }
 function allData() {
   const real = store.list();
+  if (S.src === 'remote') return { real, list: R.rows || [] };
   return { real, list: S.samples ? real.concat(SAMPLES) : real };
 }
 
@@ -151,21 +169,31 @@ function vStaff() {
   const g = agg(list);
   const needLabels = Object.fromEntries(NEED_KEYS.map((k) => [k, NEEDS[k].l]));
   const tabs = [['dash', '集計'], ['mon', 'モニター表示'], ['data', 'データ']].map((t) => `<button class="tab${S.tab === t[0] ? ' on' : ''}" data-act="tab" data-v="${t[0]}">${t[1]}</button>`).join('');
-  const sampleBadge = S.samples ? '<span class="badge">サンプル込み</span>' : '';
+  const remote = S.src === 'remote';
+  const sampleBadge = !remote && S.samples ? '<span class="badge">サンプル込み</span>' : '';
   const unsent = real.filter((r) => !r.synced).length;
+  const needToken = remote && !getToken();
+  const srcSwitch = API_BASE ? `<div class="tabs"><button class="tab${remote ? ' on' : ''}" data-act="src" data-v="remote">全体(全端末の合計)</button><button class="tab${remote ? '' : ' on'}" data-act="src" data-v="local">この端末だけ</button></div>` : '';
+  const status = remote && !needToken ? `<p class="note" style="margin:0 0 14px">${R.rows ? `全体 ${R.rows.length} 件 / 最終更新 ${new Date(R.at).toLocaleTimeString('ja-JP')}(10秒ごとに更新)` : '読み込み中…'}${R.err ? ` <span class="err">${esc(R.err)}</span>` : ''}</p>` : '';
   let body = '';
-  if (S.tab === 'mon') {
+  if (needToken) {
+    body = `<form class="pin" id="tokenform"><h2 style="font-weight:900">スタッフ用の合言葉</h2>
+      <input id="token" type="password" autocomplete="off" aria-label="合言葉" style="letter-spacing:normal;font-size:16px">
+      ${R.err ? `<div class="err">${esc(R.err)}</div>` : ''}
+      <button class="btn primary" type="submit">全体の集計を開く</button>
+      <p class="note">合言葉は、Worker に登録した STAFF_TOKEN の値です。このタブを閉じると忘れます。</p></form>`;
+  } else if (S.tab === 'mon') {
     body = `<section class="mon"><div class="mon-total"><b class="mono" style="font-family:var(--font-display)">${g.n}</b><span>人が回答${sampleBadge}</span></div>
       <h2 style="font-size:clamp(16px,2.6vw,24px);font-weight:900;margin-bottom:14px">社内で学習や強化が必要なテクノロジー</h2>
       ${barsOf(g.need, needLabels, g.n)}</section>`;
   } else if (S.tab === 'data') {
-    body = `<div class="panel"><h2>データの操作</h2><div class="tools">
+    body = `<div class="panel"><h2>データの操作${remote ? '<small>CSV は全体、削除・送信はこの端末の分</small>' : ''}</h2><div class="tools">
       <button class="btn small" data-act="csv">CSVをコピー</button>
-      <button class="btn small" data-act="samples">${S.samples ? 'サンプルを除く' : 'サンプルを含める'}</button>
+      ${remote ? '' : `<button class="btn small" data-act="samples">${S.samples ? 'サンプルを除く' : 'サンプルを含める'}</button>`}
       ${S.confirmClear ? `<button class="btn small primary" data-act="clear-yes">この端末の実データ ${real.length} 件を削除する</button><button class="btn small" data-act="clear-no">キャンセル</button>` : `<button class="btn small" data-act="clear" ${real.length ? '' : 'disabled'}>実データを削除</button>`}
       </div>
       ${S.csv !== null ? `<textarea class="csv" id="csvbox" readonly aria-label="CSV">${esc(S.csv)}</textarea><p class="note">コピーできなかったため、全選択してコピーしてください。</p>` : ''}
-      <p class="note">この端末の実データ ${real.length} 件(未送信 ${unsent} 件) / サンプル ${SAMPLES.length} 件。サンプルは画面表示専用で、保存も送信もされません。${ANON_FORM.enabled ? '' : '匿名データの送信は無効です(config.ts)。'}</p>
+      <p class="note">この端末の実データ ${real.length} 件(未送信 ${unsent} 件) / サンプル ${SAMPLES.length} 件。サンプルは画面表示専用で、保存も送信もされません。${ANON_FORM.enabled || API_BASE ? '' : '匿名データの送信は無効です(config.ts)。'}</p>
       ${unsent ? `<div class="tools" style="margin-top:10px"><button class="btn small" data-act="flush">未送信の回答を今すぐ送る</button></div>` : ''}</div>`;
   } else {
     const crossRows = Object.keys(ROLES).map((r) => {
@@ -177,8 +205,8 @@ function vStaff() {
     <div class="stats">
       <div class="stat"><div class="n">${g.n}</div><div class="l">回答数</div></div>
       <div class="stat"><div class="n">${g.today}</div><div class="l">本日の回答</div></div>
-      <div class="stat"><div class="n">${g.trial}</div><div class="l">トライアル等を開いた人</div></div>
-      <div class="stat"><div class="n">${g.forms}</div><div class="l">フォームを開いた人</div></div>
+      ${remote ? '' : `<div class="stat"><div class="n">${g.trial}</div><div class="l">トライアル等を開いた人</div></div>
+      <div class="stat"><div class="n">${g.forms}</div><div class="l">フォームを開いた人</div></div>`}
     </div>
     <div class="panel"><h2>必要な領域<small>1人2つまで選択。割合は回答者数に対する比率</small></h2>${barsOf(g.need, needLabels, g.n)}</div>
     <div class="panel"><h2>役割 × 必要な領域<small>人数(選択数)</small></h2><div class="scroll-x"><table class="x"><thead><tr><th>役割</th>${NEED_KEYS.map((n) => `<th>${esc(NEEDS[n].l)}</th>`).join('')}<th>回答者</th></tr></thead><tbody>${crossRows}</tbody></table></div></div>
@@ -191,7 +219,7 @@ function vStaff() {
   }
   return header(`<button class="link-btn" data-act="abort">スタッフ画面を閉じる</button>`) + `
   <h1 class="display" style="font-size:26px;margin-bottom:14px">ブース集計${S.tab !== 'mon' ? sampleBadge : ''}</h1>
-  <div class="tabs">${tabs}</div>${body}`;
+  ${srcSwitch}${needToken ? '' : `<div class="tabs">${tabs}</div>`}${status}${body}`;
 }
 
 function render() {
@@ -244,6 +272,7 @@ document.addEventListener('click', (e) => {
   else if (act === 'forms') { if (S.res && !S.res.forms) { S.res.forms = true; store.patch(S.res.id, { forms: true }); } }
   else if (act === 'again') { resetAnswers(); go('start'); }
   else if (act === 'tab') { S.tab = v; S.csv = null; S.confirmClear = false; render(); }
+  else if (act === 'src') { S.src = v as 'remote' | 'local'; S.csv = null; render(); void refreshRemote(); }
   else if (act === 'samples') { S.samples = !S.samples; render(); }
   else if (act === 'clear') { S.confirmClear = true; render(); }
   else if (act === 'clear-no') { S.confirmClear = false; render(); }
@@ -258,16 +287,21 @@ document.addEventListener('click', (e) => {
 document.addEventListener('submit', (e) => {
   if ((e.target as HTMLElement).id === 'pinform') {
     e.preventDefault();
-    if ((document.getElementById('pin') as HTMLInputElement).value.trim() === STAFF_PIN) { S.tab = 'dash'; S.pinErr = false; go('staff'); }
+    if ((document.getElementById('pin') as HTMLInputElement).value.trim() === STAFF_PIN) { S.tab = 'dash'; S.pinErr = false; go('staff'); void refreshRemote(); }
     else { S.pinErr = true; render(); }
+  } else if ((e.target as HTMLElement).id === 'tokenform') {
+    e.preventDefault();
+    setToken((document.getElementById('token') as HTMLInputElement).value.trim());
+    R.err = ''; R.rows = null; render(); void refreshRemote();
   }
 });
 ['pointerdown', 'keydown'].forEach((t) => document.addEventListener(t, () => { lastActive = Date.now(); }, true));
 
 setInterval(() => {
   if ((S.view === 'q' || S.view === 'result') && Date.now() - lastActive > IDLE_MS) { resetAnswers(); go('start'); }
-  if (S.view === 'staff' && S.tab === 'mon') render();
+  if (S.view === 'staff' && S.tab === 'mon' && S.src === 'local') render();
 }, 3000);
+setInterval(() => { if (S.view === 'staff' && S.src === 'remote') void refreshRemote(); }, 10_000);
 // 未送信の回答は、回線が戻ったときと30秒ごとに再送する
 window.addEventListener('online', () => void flushPending(store));
 setInterval(() => void flushPending(store), 30_000);
