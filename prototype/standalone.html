@@ -1,0 +1,589 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>学習パス診断</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=IBM+Plex+Mono:wght@400;500&family=Zen+Kaku+Gothic+New:wght@400;500;700;900&display=swap">
+<style>
+/* Layout: 1画面1問のキオスク型。開始 → 6問 → 結果 → 次の方へ。スタッフ用の集計は別画面。
+   Palette: 青みのあるインク + 信号の赤1色。 Type: Dela Gothic One(見出しのみ) / Zen Kaku Gothic New(本文) / IBM Plex Mono(試験コード) */
+:root{
+  --bg:#EDF0F4; --surface:#FFFFFF; --surface-2:#F5F7FA; --ink:#12171E; --muted:#56606D; --line:#D3D9E1;
+  --accent:#D3212A; --accent-ink:#FFFFFF; --accent-soft:#FCE8E9; --rail:#2A3545;
+  --font-display:'Dela Gothic One','Zen Kaku Gothic New','Hiragino Sans','Yu Gothic',sans-serif;
+  --font-body:'Zen Kaku Gothic New','Hiragino Sans','Yu Gothic',system-ui,sans-serif;
+  --font-mono:'IBM Plex Mono',ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0E1217; --surface:#171D25; --surface-2:#1E252F; --ink:#EDF0F4; --muted:#9AA5B3; --line:#2B3440;
+    --accent:#FF5B61; --accent-ink:#1A0A0B; --accent-soft:#3A1F22; --rail:#C7D0DB; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0E1217; --surface:#171D25; --surface-2:#1E252F; --ink:#EDF0F4; --muted:#9AA5B3; --line:#2B3440;
+  --accent:#FF5B61; --accent-ink:#1A0A0B; --accent-soft:#3A1F22; --rail:#C7D0DB; color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:500 16px/1.7 var(--font-body);-webkit-text-size-adjust:100%}
+[hidden]{display:none!important}
+button,input,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+a{color:var(--accent);text-underline-offset:3px}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.wrap{max-width:920px;margin:0 auto;padding-inline:16px;padding-block:20px 40px}
+.mono{font-family:var(--font-mono);font-variant-numeric:tabular-nums}
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding-bottom:16px}
+.brand{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--muted);font-weight:700;letter-spacing:.04em}
+.brand i{width:12px;height:12px;background:var(--accent);display:inline-block}
+.link-btn{background:none;border:0;padding:8px 4px;color:var(--muted);font-size:13px;text-decoration:underline;text-underline-offset:3px}
+h1,h2,h3{margin:0;text-wrap:balance}
+.display{font-family:var(--font-display);font-weight:400;line-height:1.25;letter-spacing:.01em}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:56px;padding:0 28px;border-radius:6px;border:2px solid var(--ink);background:var(--surface);font-weight:900;font-size:17px;text-decoration:none;color:var(--ink)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn[disabled]{opacity:.4;cursor:not-allowed}
+.btn.small{min-height:44px;padding:0 16px;font-size:14px}
+
+/* start */
+.hero{display:grid;gap:28px;grid-template-columns:1fr;align-items:center;padding-block:12px 8px}
+@media (min-width:820px){.hero{grid-template-columns:1.15fr .85fr;gap:48px}}
+.hero h1{font-size:clamp(30px,5.4vw,52px)}
+.hero h1 em{font-style:normal;color:var(--accent)}
+.hero p.lead{margin:18px 0 0;color:var(--muted);font-size:17px;max-width:34em}
+.facts{display:flex;gap:10px 22px;flex-wrap:wrap;margin:22px 0 28px;padding:0;list-style:none;font-weight:700;font-size:14px}
+.facts li{display:flex;align-items:baseline;gap:6px}
+.facts b{font-family:var(--font-display);font-weight:400;font-size:26px;color:var(--ink)}
+.notice{margin-top:18px;font-size:12.5px;color:var(--muted);max-width:40em}
+.stairs{list-style:none;margin:0;padding:18px 18px 20px;background:var(--surface);border:1px solid var(--line);border-radius:8px}
+.stairs h2{font-size:12px;letter-spacing:.08em;color:var(--muted);font-weight:700;margin-bottom:14px}
+.stairs ol{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.stairs li{margin-left:calc(var(--i)*26px);display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--surface-2);border-left:4px solid var(--rail);border-radius:0 4px 4px 0}
+.stairs li:last-child{border-left-color:var(--accent)}
+.stairs .lvl{font-size:12px;color:var(--muted);font-weight:700;min-width:5.2em}
+.stairs .code{font-size:15px;font-weight:500}
+.stairs small{display:block;margin-top:12px;color:var(--muted);font-size:12px}
+
+/* question */
+.progress{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin-bottom:22px}
+.progress span{height:6px;background:var(--line);border-radius:3px}
+.progress span.on{background:var(--accent)}
+.qhead{display:flex;justify-content:space-between;align-items:baseline;gap:12px;color:var(--muted);font-size:13px;font-weight:700}
+.q-title{font-size:clamp(24px,4.4vw,38px);margin:8px 0 6px}
+.q-hint{color:var(--muted);margin:0 0 22px;font-size:15px}
+.opts{display:grid;gap:12px;grid-template-columns:1fr;margin:0;padding:0;list-style:none}
+@media (min-width:680px){.opts.two{grid-template-columns:1fr 1fr}}
+.opt{width:100%;text-align:left;display:flex;gap:14px;align-items:center;min-height:68px;padding:12px 16px;background:var(--surface);border:2px solid var(--line);border-radius:8px}
+.opt:hover{border-color:var(--rail)}
+.opt .mark{flex:none;width:24px;height:24px;border:2px solid var(--muted);display:grid;place-items:center;font-size:15px;line-height:1;font-weight:900;color:transparent}
+.opt .mark.r{border-radius:50%}
+.opt .mark.c{border-radius:4px}
+.opt .t{display:block;font-weight:900;font-size:17px;line-height:1.4}
+.opt .s{display:block;color:var(--muted);font-size:13px;font-weight:500;line-height:1.5}
+.opt.sel{border-color:var(--accent);background:var(--accent-soft)}
+.opt.sel .mark{border-color:var(--accent);background:var(--accent);color:var(--accent-ink)}
+.opt .ord{margin-left:auto;font-family:var(--font-mono);font-size:12px;color:var(--accent);font-weight:500;white-space:nowrap}
+.qfoot{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:24px;flex-wrap:wrap}
+
+/* result */
+.res-head h1{font-size:clamp(26px,4.6vw,42px)}
+.profile{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0 26px}
+.chip{display:inline-flex;align-items:center;padding:3px 10px;border:1px solid var(--line);background:var(--surface);border-radius:999px;font-size:12.5px;font-weight:700;color:var(--muted)}
+.chip.hit{border-color:var(--accent);color:var(--accent);background:var(--accent-soft)}
+.recs{display:flex;flex-direction:column;gap:14px;margin:0;padding:0;list-style:none}
+.rec{display:grid;grid-template-columns:48px 1fr;gap:14px;padding:16px 16px 18px 12px;background:var(--surface);border:1px solid var(--line);border-radius:8px}
+.rec.first{border:2px solid var(--accent)}
+.rank{font-family:var(--font-display);font-size:34px;line-height:1;color:var(--accent);text-align:center;padding-top:2px}
+.rec-meta{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;font-size:13px}
+.lv{font-weight:900;padding:1px 8px;border-radius:3px;background:var(--rail);color:var(--surface)}
+.rec h3{font-size:18px;line-height:1.45;margin:6px 0 4px;font-weight:900}
+.rec p{margin:0 0 10px;color:var(--muted);font-size:14.5px}
+.rec .chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.course{font-size:13px;display:flex;flex-wrap:wrap;gap:4px 14px;align-items:baseline;border-top:1px dashed var(--line);padding-top:10px}
+.course .cn{color:var(--muted);min-width:0;overflow-wrap:anywhere}
+.cta{margin-top:22px;padding:20px;background:var(--rail);color:var(--surface);border-radius:8px;display:grid;gap:14px}
+.cta h2{font-size:20px;font-weight:900}
+.cta p{margin:0;font-size:14.5px;opacity:.9}
+.cta .row{display:flex;gap:10px;flex-wrap:wrap}
+.cta .btn{border-color:var(--surface)}
+.cta .btn.primary{border-color:var(--accent)}
+.cta a.alt{color:var(--surface)}
+.mail{margin-top:18px;padding:18px;background:var(--surface);border:1px solid var(--line);border-radius:8px}
+.mail h2{font-size:16px;font-weight:900;margin-bottom:4px}
+.mail p{margin:0 0 12px;color:var(--muted);font-size:13.5px}
+.mail .f{display:flex;gap:10px;flex-wrap:wrap}
+.mail input[type=email]{flex:1 1 240px;min-width:0;min-height:48px;padding:0 14px;border:2px solid var(--line);border-radius:6px;background:var(--surface-2)}
+.mail label.cb{display:flex;gap:10px;align-items:flex-start;font-size:13px;color:var(--muted);margin:10px 0 0}
+.mail label.cb input{margin-top:5px;width:18px;height:18px;flex:none}
+.err{color:var(--accent);font-size:13px;font-weight:700;margin-top:8px}
+.next-person{display:flex;justify-content:center;margin-top:28px}
+
+/* staff */
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:18px}
+.tab{min-height:44px;padding:0 18px;border:2px solid var(--line);background:var(--surface);border-radius:6px;font-weight:900;font-size:14px}
+.tab.on{border-color:var(--ink);background:var(--ink);color:var(--bg)}
+.badge{display:inline-block;padding:2px 10px;font-size:12px;font-weight:900;border-radius:3px;background:var(--accent-soft);color:var(--accent);margin-left:8px;vertical-align:middle}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:18px}
+.stat{padding:14px 16px;background:var(--surface);border:1px solid var(--line);border-radius:8px}
+.stat .n{font-family:var(--font-display);font-size:34px;line-height:1.1}
+.stat .l{font-size:12.5px;color:var(--muted);font-weight:700}
+.panel{padding:16px 18px 18px;background:var(--surface);border:1px solid var(--line);border-radius:8px;margin-bottom:14px}
+.panel h2{font-size:15px;font-weight:900;margin-bottom:12px}
+.panel h2 small{color:var(--muted);font-weight:500;margin-left:6px;font-size:12px}
+.grid2{display:grid;gap:14px;grid-template-columns:1fr}
+@media (min-width:760px){.grid2{grid-template-columns:1fr 1fr}}
+.bars{display:flex;flex-direction:column;gap:9px}
+.bar{display:grid;grid-template-columns:minmax(7em,34%) 1fr 5.4em;gap:10px;align-items:center;font-size:13.5px}
+.bar .lab{font-weight:700;min-width:0;overflow-wrap:anywhere}
+.bar .tr{height:16px;background:var(--surface-2);border-radius:2px;overflow:hidden}
+.bar .fl{height:100%;background:var(--rail);min-width:2px}
+.bar.top .fl{background:var(--accent)}
+.bar .v{text-align:right;font-family:var(--font-mono);font-size:12.5px;font-variant-numeric:tabular-nums}
+.scroll-x{overflow-x:auto}
+table.x{border-collapse:collapse;width:100%;min-width:560px;font-size:13px}
+table.x th,table.x td{padding:7px 8px;text-align:center;border-bottom:1px solid var(--line)}
+table.x th:first-child,table.x td:first-child{text-align:left;font-weight:700;white-space:nowrap}
+table.x th{font-size:12px;color:var(--muted);font-weight:700}
+table.x td.h{font-family:var(--font-mono);font-variant-numeric:tabular-nums}
+.toprec{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:8px;font-size:13.5px}
+.toprec li{display:flex;gap:10px;align-items:baseline;justify-content:space-between}
+.toprec .nm{min-width:0;overflow-wrap:anywhere}
+.tools{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+textarea.csv{width:100%;min-height:140px;margin-top:12px;padding:10px;font:12px/1.5 var(--font-mono);background:var(--surface-2);border:1px solid var(--line);border-radius:6px}
+.note{font-size:12.5px;color:var(--muted);margin:10px 0 0}
+/* monitor */
+.mon{padding:8px 0}
+.mon-total{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;margin-bottom:22px}
+.mon-total b{font-family:var(--font-display);font-weight:400;font-size:clamp(60px,14vw,120px);line-height:1}
+.mon-total span{font-weight:900;font-size:clamp(16px,2.6vw,24px)}
+.mon .bars{gap:16px}
+.mon .bar{grid-template-columns:minmax(8em,30%) 1fr 4.5em;font-size:clamp(15px,2.4vw,24px)}
+.mon .bar .tr{height:clamp(22px,3.6vw,38px)}
+.mon .bar .v{font-size:clamp(14px,2.2vw,22px)}
+.pin{max-width:380px;margin:40px auto;padding:22px;background:var(--surface);border:1px solid var(--line);border-radius:8px;display:grid;gap:12px}
+.pin input{min-height:52px;padding:0 14px;border:2px solid var(--line);border-radius:6px;font-size:22px;letter-spacing:.3em;text-align:center;background:var(--surface-2)}
+@media (prefers-reduced-motion:no-preference){.opt,.btn{transition:background .12s,border-color .12s}}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+<script>
+/* ============================================================
+   データ: Lab8010/redhat-certifications-list の certifications.json (Active のみ) を元に整形
+   lv=レベル(1〜4 = 100〜400) d=領域(先頭が主) p=関連製品 dev=開発者向け legacy=優先度を下げる
+   ============================================================ */
+const CERTS=[
+{id:'rhcsa',exam:'EX200',lv:2,d:['linux'],p:['rhel'],n:'System Administrator (RHCSA)',course:'RH199',cn:'RHCSA Rapid Track course',desc:'RHELの基本的なシステム管理スキルを認定。ファイルシステム・ユーザー・ネットワーク・ストレージ・パッケージ管理など日常運用の実践力。',url:'https://www.redhat.com/ja/services/training/ex200-red-hat-certified-system-administrator-rhcsa-exam',curl:'https://www.redhat.com/ja/services/training/rh199-rhcsa-rapid-track-course'},
+{id:'ex342',exam:'EX342',lv:3,d:['linux'],p:['rhel'],n:'Specialist in Linux Diagnostics and Troubleshooting',course:'RH342',cn:'Red Hat Enterprise Linux Diagnostics and Troubleshooting',desc:'RHELの複雑な障害を体系的に診断・解決するスキルを認定。ブート障害やネットワーク障害、性能劣化に対応。',url:'https://www.redhat.com/ja/services/training/ex342-red-hat-%E3%82%A8%E3%82%AD%E3%82%B9%E3%83%91%E3%83%BC%E3%83%88%E8%A9%A6%E9%A8%93-red-hat-enterprise-linux-diagnostics-and-troubleshooting',curl:'https://www.redhat.com/ja/services/training/rh342-red-hat-enterprise-linux-diagnostics-and-troubleshooting'},
+{id:'ex210',exam:'EX210',lv:2,d:[],p:['other'],n:'Specialist in Cloud Infrastructure',course:'CL210',cn:'Red Hat OpenStack Administration II',desc:'OpenStackによるプライベートクラウドの構築・管理スキルを認定。',url:'https://www.redhat.com/ja/services/training/ex210-red-hat-certified-system-administrator-red-hat-openstack-exam',curl:'https://www.redhat.com/ja/services/training/cl210-red-hat-openstack-administration-ii'},
+{id:'ex358',exam:'EX358',lv:3,d:['linux','auto'],p:['rhel'],n:'Specialist in Services Management and Automation',course:'RH358',cn:'Red Hat Services Management and Automation',desc:'RHELのサービス管理と自動化スキルを認定。systemd・SELinux・Podman・NFSなどを効率的に管理。',url:'https://www.redhat.com/ja/services/training/ex358-red-hat-certified-specialist-services-management-automation-exam',curl:'https://www.redhat.com/ja/services/training/rh358-red-hat-services-management-automation'},
+{id:'ex362',exam:'EX362',lv:3,d:['linux','sec'],p:['rhel'],n:'Specialist in Identity Management',course:'RH362',cn:'Red Hat Security: Identity Management and Authentication',desc:'Red Hat IdMによる統合認証基盤の構築・管理スキルを認定。LDAP・Kerberos・DNSを組み合わせた認証・認可の集中管理。',url:'https://www.redhat.com/ja/services/training/ex362-red-hat-certified-specialist-identity-management-exam',curl:'https://www.redhat.com/ja/services/training/rh362-red-hat-security-identity-management-and-authentication'},
+{id:'ex403',exam:'EX403',lv:4,d:['auto','linux'],p:['rhel'],n:'Specialist in Deployment and Systems Management',course:'RH403',cn:'Red Hat Satellite 6 Administration',desc:'Red Hat Satelliteによる大規模システムの展開・管理スキルを認定。パッチ・プロビジョニング・コンプライアンス管理。',url:'https://www.redhat.com/ja/services/training/ex403-red-hat-certificate-expertise-deployment-systems-management-exam',curl:'https://www.redhat.com/ja/services/training/rh403-red-hat-satellite-6-administration'},
+{id:'ex415',exam:'EX415',lv:4,d:['sec','linux'],p:['rhel'],n:'Specialist in Security: Linux',course:'RH415',cn:'Red Hat Security: Linux in Physical, Virtual, and Cloud',desc:'RHELのセキュリティ強化スキルを認定。SELinux・OpenSCAP・auditd・firewallなどでシステムを堅牢化。',url:'https://www.redhat.com/ja/services/training/ex415-red-hat-certified-specialist-security-linux-exam',curl:'https://www.redhat.com/ja/services/training/rh415-red-hat-security-linux-physical-virtual-and-cloud'},
+{id:'ex436',exam:'EX436',lv:4,d:['linux'],p:['rhel'],n:'Specialist in High Availability Clustering',course:'RH436',cn:'Red Hat High Availability Clustering',desc:'Pacemakerによる高可用性クラスタの構築・管理スキルを認定。フェイルオーバーと共有ストレージで継続稼働を実現。',url:'https://www.redhat.com/ja/services/training/ex436-red-hat-certificate-expertise-clustering-and-storage-management-exam',curl:'https://www.redhat.com/ja/services/training/rh436-red-hat-high-availability-clustering'},
+{id:'ex442',exam:'EX442',lv:4,d:['linux'],p:['rhel'],n:'Specialist in Linux Performance Tuning',course:'RH442',cn:'Red Hat Enterprise Linux Performance Tuning',desc:'RHELの性能分析・最適化スキルを認定。CPU・メモリ・ネットワーク・ストレージのボトルネックを特定し改善。',url:'https://www.redhat.com/ja/services/training/ex442-red-hat-certificate-expertise-performance-tuning-exam',curl:'https://www.redhat.com/ja/services/training/rh442-red-hat-enterprise-linux-performance-tuning'},
+{id:'rhce',exam:'EX294',lv:2,d:['auto','linux'],p:['aap','rhel'],n:'Engineer in Ansible (RHCE)',course:'AU294',cn:'Red Hat Enterprise Linux Automation with Ansible',desc:'Ansibleによるシステム管理の自動化スキルを認定。プレイブック作成・インベントリ管理・ロール開発。',url:'https://www.redhat.com/ja/services/training/ex294-red-hat-certified-engineer-rhce-exam-red-hat-enterprise-linux-9',curl:'https://www.redhat.com/ja/services/training/au294-red-hat-linux-automation-with-ansible'},
+{id:'ex336',exam:'EX336',lv:3,d:['auto','virt'],p:['virt','aap'],n:'Specialist in Automating OpenShift Virtual Machine Management',course:'DO336',cn:'Automate and Manage Red Hat OpenShift Virtualization with Ansible',desc:'AnsibleによるOpenShift仮想マシンの自動化・移行スキルを認定。VMのプロビジョニングと移行ワークフローの構築。',url:'https://www.redhat.com/ja/services/training/ex336-red-hat-certified-specialist-automating-openshift-virtual-machine-management-exam',curl:'https://www.redhat.com/ja/services/training/do336-automate-manage-red-hat-openshift-virtualization-with-ansible'},
+{id:'ex374',exam:'EX374',lv:3,d:['auto'],p:['aap'],n:'Specialist in Automation with Ansible Automation Platform',course:'AU374',cn:'Developing Advanced Automation with Red Hat Ansible Automation Platform',desc:'Ansible Automation Platformによる高度な自動化コンテンツの開発スキルを認定。カスタムモジュール・コレクション・実行環境の作成。',url:'https://www.redhat.com/ja/services/training/ex374-red-hat-certified-specialist-developing-automation-ansible-automation-platform-exam',curl:'https://www.redhat.com/ja/services/training/au374-developing-advanced-automation-red-hat-ansible-automation-platform'},
+{id:'ex417',exam:'EX417',lv:4,d:['auto'],p:['aap'],n:'Specialist in Microsoft Windows Automation with Ansible',course:'DO417',cn:'Microsoft Windows Automation with Red Hat Ansible Automation Platform',desc:'AnsibleによるWindows環境の自動化スキルを認定。',url:'https://www.redhat.com/ja/services/training/ex417-red-hat-certified-specialist-microsoft-windows-automation-ansible-exam',curl:'https://www.redhat.com/ja/services/training/do417-microsoft-windows-automation-red-hat-ansible-automation-platform'},
+{id:'ex457',exam:'EX457',lv:4,d:['auto'],p:['aap'],n:'Specialist in Ansible Network Automation',course:'DO457',cn:'Network Automation with Red Hat Ansible Automation Platform',desc:'Ansibleによるネットワーク機器の自動化スキルを認定。',url:'https://www.redhat.com/ja/services/training/ex457-red-hat-certified-specialist-in-ansible-network-automation-exam',curl:'https://www.redhat.com/ja/services/training/do457-ansible-network-automation'},
+{id:'ex467',exam:'EX467',lv:4,d:['auto'],p:['aap'],n:'Specialist in Managing Automation with Ansible Automation Platform',course:'DO467',cn:'Managing Enterprise Automation with Red Hat Ansible Automation Platform',desc:'Ansible Automation Platformの管理・運用スキルを認定。実行環境・インベントリ・ジョブテンプレートを統合管理。',url:'https://www.redhat.com/ja/services/training/ex467-red-hat-certified-specialist-managing-automation-ansible-automation-platform-exam',curl:'https://www.redhat.com/ja/services/training/do467-managing-enterprise-automation-red-hat-ansible-automation-platform'},
+{id:'ex180',exam:'EX180',lv:1,d:['cn'],p:['ocp'],n:'Technologist in OpenShift',course:'DO180',cn:'Red Hat OpenShift Administration I: Operating a Production Cluster',desc:'OpenShiftの基本操作スキルを認定。コンテナのデプロイ・管理・スケーリングなどの基礎。',url:'https://www.redhat.com/ja/services/training/ex180-red-hat-certified-technologist-in-openshift-exam',curl:'https://www.redhat.com/ja/services/training/red-hat-openshift-administration-i-operating-a-production-cluster'},
+{id:'ex156',exam:'EX156',lv:1,d:['virt'],p:['virt','ocp'],n:'Technologist in OpenShift Virtualization',course:'DO156',cn:'Red Hat OpenShift Virtualization Administration I: Operating Virtual Machines',desc:'OpenShift Virtualizationによる仮想マシンの基本操作スキルを認定。VMの作成・起動・停止・移行など。',url:'https://www.redhat.com/ja/services/training/ex156-red-hat-certified-technologist-in-openshift-virtualization',curl:'https://www.redhat.com/ja/services/training/do156-red-hat-openshift-virtualization-administration-i-operating-virtual-machines'},
+{id:'ex280',exam:'EX280',lv:2,d:['cn'],p:['ocp'],n:'System Administrator in OpenShift',course:'DO280',cn:'Red Hat OpenShift Administration II: Configuring a Production Cluster',desc:'OpenShiftクラスタの管理スキルを認定。マルチテナント設定・セキュリティポリシー・ネットワーク・ストレージ管理など本番運用に必要な力。',url:'https://www.redhat.com/ja/services/training/red-hat-certified-openshift-administrator-exam',curl:'https://www.redhat.com/ja/services/training/red-hat-openshift-administration-ii-configuring-a-production-cluster'},
+{id:'ex282',exam:'EX282',lv:4,d:['cn'],p:['ocp'],n:'Specialist in OpenShift Networking',course:'DO282',cn:'Red Hat OpenShift Administration III: Scaling Deployments in the Enterprise',desc:'OpenShiftのネットワーク設定・管理スキルを認定。クラスタネットワークやルーティングの運用。',url:'https://www.redhat.com/ja/services/training/red-hat-certified-specialist-openshift-networking',curl:'https://www.redhat.com/ja/services/training/do282-red-hat-openshift-administration-iii'},
+{id:'ex380',exam:'EX380',lv:3,d:['cn','auto'],p:['ocp'],n:'Engineer in OpenShift',course:'DO380',cn:'Red Hat OpenShift Administration III: Scaling Deployments in the Enterprise',desc:'OpenShiftの自動化とインテグレーションのスキルを認定。GitOps・Tekton・Argo CDによるCI/CDパイプラインの構築・運用。',url:'https://www.redhat.com/ja/services/training/ex380-certified-specialist-openshift-automation-exam',curl:'https://www.redhat.com/ja/services/training/do380-red-hat-openshift-administration-iii-scaling-deployments-in-the-enterprise'},
+{id:'ex316',exam:'EX316',lv:3,d:['virt'],p:['virt','ocp'],n:'Specialist in OpenShift Virtualization',course:'DO256',cn:'Red Hat OpenShift Virtualization Administration II: Configuring Production Virtual Machines',desc:'OpenShift Virtualizationによる仮想マシンの本番運用スキルを認定。ライブマイグレーション・ネットワーク・ストレージ設定など。',url:'https://www.redhat.com/ja/services/training/red-hat-certified-specialist-openshift-virtualization-ex316',curl:'https://www.redhat.com/ja/services/training/do256-red-hat-openshift-virtualization-administration-ii-configuring-production-virtual-machines'},
+{id:'ex370',exam:'EX370',lv:3,d:['cn'],p:['ocp'],n:'Specialist in OpenShift Data Foundation',course:'DO370',cn:'Enterprise Kubernetes Storage with Red Hat OpenShift Data Foundation',desc:'OpenShift Data Foundationによる永続ストレージの構築・管理スキルを認定。',url:'https://www.redhat.com/ja/services/training/ex370-red-hat-certified-specialist-in-openshift-data-foundation-exam',curl:'https://www.redhat.com/ja/services/training/do370-enterprise-kubernetes-storage-with-red-hat-openshift-data-foundation'},
+{id:'ex430',exam:'EX430',lv:4,d:['sec','cn'],p:['ocp'],n:'Specialist in OpenShift Advanced Cluster Security',course:'DO430',cn:'Securing Kubernetes Clusters with Red Hat Advanced Cluster Security',desc:'Red Hat Advanced Cluster Securityによるコンテナセキュリティの実装スキルを認定。脆弱性管理・ポリシー適用・ネットワークセグメンテーション。',url:'https://www.redhat.com/ja/services/training/ex430-red-hat-certified-specialist-openshift-advanced-cluster-security-exam',curl:'https://www.redhat.com/ja/services/training/do430-securing-kubernetes-clusters-red-hat-advanced-cluster-security'},
+{id:'ex432',exam:'EX432',lv:4,d:['cn'],p:['ocp'],n:'Specialist in OpenShift Advanced Cluster Management',course:'DO432',cn:'Multicluster Management with Red Hat Advanced Cluster Management for Kubernetes',desc:'Red Hat Advanced Cluster Managementによるマルチクラスタ管理スキルを認定。',url:'https://www.redhat.com/ja/services/training/ex432-red-hat-certified-specialist-openshift-advanced-cluster-management-exam',curl:'https://www.redhat.com/ja/services/training/do432-multicluster-management-red-hat-advanced-cluster-management-kubernetes'},
+{id:'ex267',exam:'EX267',lv:2,d:['ai'],p:['ai','ocp'],n:'Developer in AI',course:'AI267',cn:'Developing and Deploying AI/ML Applications on Red Hat OpenShift AI',desc:'OpenShift AIによるAI/MLワークロードの展開・管理スキルを認定。モデルのトレーニング・サービング・パイプライン管理。',url:'https://www.redhat.com/ja/services/training/ex267-red-hat-certified-specialist-openshift-ai',curl:'https://www.redhat.com/ja/services/training/developing-and-deploying-aiml-applications-red-hat-openshift-ai-ai267'},
+{id:'ex188',exam:'EX188',lv:1,d:['cn'],p:['ocp'],n:'Specialist in Container Management',course:'DO188',cn:'Red Hat OpenShift Development I: Introduction to Containers with Podman',desc:'Podmanによるコンテナの基本操作スキルを認定。ビルド・実行・管理・カスタマイズ。',url:'https://www.redhat.com/ja/services/training/ex188-red-hat-certified-specialist-containers-exam',curl:'https://www.redhat.com/ja/services/training/do188-red-hat-open-shift-development-introduction-containers-with-podman'},
+{id:'ex288',exam:'EX288',lv:2,d:['cn'],p:['ocp'],dev:1,n:'Engineer in Cloud-native Applications',course:'DO288',cn:'Red Hat OpenShift Developer II: Building and Deploying Cloud-native Applications',desc:'OpenShift上のコンテナアプリケーション開発・デプロイスキルを認定。Source-to-Image・Helm・CI/CD。',url:'https://www.redhat.com/ja/services/training/ex288-red-hat-certified-openshift-application-developer-exam',curl:'https://www.redhat.com/ja/services/training/red-hat-openshift-developer-ii-building-and-deploying-cloud-native-applications'},
+{id:'ex183',exam:'EX183',lv:1,d:[],p:['other'],dev:1,n:'Specialist in Enterprise Application Development',course:'AD183',cn:'Red Hat Application Development I: Programming in Java EE',desc:'Java EEによるエンタープライズアプリ開発の基礎スキルを認定。',url:'https://www.redhat.com/ja/services/training/ex183-red-hat-certified-enterprise-application-developer-exam',curl:'https://www.redhat.com/ja/services/training/ad183-red-hat-application-development-i-programming-java-ee'},
+{id:'ex248',exam:'EX248',lv:2,d:[],p:['other'],legacy:1,n:'Specialist in Enterprise Application Server Administration',course:'AD248',cn:'Red Hat JBoss Application Administration I',desc:'JBoss EAPの管理スキルを認定。',url:'https://www.redhat.com/ja/services/training/ex248-red-hat-certified-jboss-administration-rhcja-exam',curl:'https://www.redhat.com/ja/services/training/ad248-red-hat-jboss-application-administration-i'},
+{id:'ex328',exam:'EX328',lv:3,d:['cn'],p:['ocp'],dev:1,n:'Specialist in Building Resilient Microservices',course:'DO328',cn:'Building Resilient Microservices with Istio and Red Hat OpenShift Service Mesh',desc:'Istioとサービスメッシュによるマイクロサービスの耐障害性設計スキルを認定。',url:'https://www.redhat.com/ja/services/training/ex328-red-hat-certified-specialist-in-building-resilient-microservices-exam',curl:'https://www.redhat.com/ja/services/training/do328-building-resilient-microservices-with-istio-and-red-hat-openshift-service-mesh'},
+{id:'ex378',exam:'EX378',lv:3,d:['cn'],p:['ocp'],dev:1,n:'Specialist in Cloud-native Development',course:'DO378',cn:'Red Hat Cloud-native Microservices Development with Quarkus',desc:'Quarkusによるクラウドネイティブなマイクロサービス開発スキルを認定。',url:'https://www.redhat.com/ja/services/training/ex378-red-hat-certified-cloud-native-developer-exam',curl:'https://www.redhat.com/ja/services/training/red-hat-cloud-native-microservices-development-quarkus-do378'}
+];
+
+const NEEDS={cn:{l:'クラウドネイティブ',s:'コンテナ、Kubernetes'},linux:{l:'Linux',s:'RHELの運用・管理'},virt:{l:'仮想化の移行',s:'新しい仮想化基盤'},auto:{l:'インフラ運用の自動化',s:'Ansibleなど'},ai:{l:'AI',s:'推論基盤・AIエージェント'},sec:{l:'セキュリティ',s:'脆弱性対応・堅牢化'}};
+const NEED_KEYS=Object.keys(NEEDS);
+const ROLES={infra:'インフラ・運用',sre:'SRE・プラットフォーム',dev:'アプリ開発',mgr:'マネージャー・企画',other:'営業・その他'};
+const EXPS={1:'これから学ぶ',2:'基本操作ができる',3:'実務で運用中',4:'設計・構築をリード'};
+const PRODS={rhel:'RHEL',ocp:'OpenShift',virt:'OpenShift Virtualization',aap:'Ansible Automation Platform',ai:'Red Hat AI',none:'未導入・これから'};
+const TIMINGS={t3:'3か月以内',t6:'半年以内',t12:'1年以内',tbd:'未定・情報収集中'};
+const STYLES={ilt:'講師付きで集中',sub:'オンライン学び放題',self:'自習して試験で証明',team:'チーム・社内で一括'};
+const LVN={1:'初級',2:'中級',3:'上級',4:'専門'};
+const RHLS_TRIAL='https://www.redhat.com/ja/services/training/learning-subscription/trial';
+const ALL_COURSES='https://www.redhat.com/ja/services/training/all-courses-exams';
+const CERT_PAGE='https://www.redhat.com/ja/services/certifications';
+const CERT_LIST='https://lab8010.github.io/redhat-certifications-list/';
+const CONTACT='https://www.redhat.com/ja/services/training-and-certification/contact-us';
+const STAFF_PIN='1029';
+
+const QS=[
+ {k:'role',type:'one',t:'あなたの役割に近いものは？',h:'ひとつ選んでください',cols:2,
+  o:[['infra','インフラ・運用エンジニア','サーバ、ネットワーク、基盤の構築と運用'],['sre','SRE・プラットフォームエンジニア','開発基盤、自動化、信頼性'],['dev','アプリケーション開発者','コンテナ、マイクロサービス、API'],['mgr','IT部門のマネージャー・企画','人材育成、技術選定、予算'],['other','営業・パートナー・その他','']]},
+ {k:'needs',type:'multi',max:2,t:'社内で学習や強化が必要なテクノロジーは？',h:'いちばん必要なものから順に、最大2つ選んでください',cols:2,
+  o:NEED_KEYS.map(k=>[k,NEEDS[k].l,NEEDS[k].s])},
+ {k:'exp',type:'one',t:'いまのスキルレベルは？',h:'選んだ領域について、いちばん近いものを選んでください',cols:1,
+  o:[[1,'これから学ぶ','未経験、または触ったことがある程度'],[2,'基本操作ができる','手順書があれば運用できる'],[3,'実務で運用している','トラブル対応や設定変更を任されている'],[4,'設計・構築をリードしている','アーキテクチャや標準化に関わる']]},
+ {k:'prods',type:'multi',max:6,t:'いま使っている Red Hat 製品は？',h:'当てはまるものをすべて選んでください',cols:2,
+  o:Object.keys(PRODS).map(k=>[k,PRODS[k],''])},
+ {k:'timing',type:'one',t:'学習を始めたい時期は？',h:'',cols:2,
+  o:Object.keys(TIMINGS).map(k=>[k,TIMINGS[k],''])},
+ {k:'style',type:'one',t:'学び方のスタイルは？',h:'いちばん合うものを選んでください',cols:2,
+  o:[['ilt','講師と一緒に集中して学ぶ','クラスルームまたはオンラインの講師付きコース'],['sub','オンラインで好きな時に学び放題','ラーニングサブスクリプション'],['self','自習して試験で実力を証明','実技試験の認定資格を目標に'],['team','チーム・社内でまとめて学ぶ','部署や会社単位での育成']]}
+];
+
+/* ============================================================
+   診断ロジック(ルールベース)
+   領域一致(1位=4点,2位=3点) + レベル適合 + 利用製品 + 役割補正
+   ============================================================ */
+function recommend(a){
+  const W=[4,3];
+  const rows=CERTS.map(c=>{
+    let dom=0; const hit=[];
+    a.needs.forEach((n,j)=>{ c.d.forEach((d,i)=>{ if(d===n){ dom+=W[j]*(i===0?1:.7); if(!hit.includes(n)) hit.push(n);} }); });
+    const gap=c.lv-a.exp;
+    const lvFit=2-1.3*Math.abs(gap);
+    const prodHit=c.p.filter(p=>a.prods.includes(p));
+    const prod=prodHit.length?1.2:0;
+    let role=0;
+    if(c.dev) role+=(a.role==='dev'?1.5:-1.5);
+    if(a.role==='sre'&&c.d.includes('auto')) role+=.6;
+    if((a.role==='mgr'||a.role==='other')&&c.lv<=2) role+=1;
+    if(c.legacy) role-=1.5;
+    const score=dom+lvFit+prod+role+(dom>0?10:0);
+    return {c,score,hit,gap,prodHit,dom};
+  });
+  rows.sort((x,y)=>y.score-x.score||Math.abs(x.gap)-Math.abs(y.gap)||x.c.exam.localeCompare(y.c.exam));
+  /* 上位5件を選んだあと、入門レベルから順に並べ替える(同レベルはスコア順を維持) */
+  return rows.slice(0,5).sort((x,y)=>x.c.lv-y.c.lv).map(r=>{
+    const reasons=[];
+    r.hit.forEach(n=>reasons.push({t:'領域: '+NEEDS[n].l,hit:1}));
+    if(r.gap===0) reasons.push({t:'いまのレベルに一致',hit:1});
+    else if(r.gap===1) reasons.push({t:'次のステップ',hit:0});
+    else if(r.gap<0) reasons.push({t:'基礎の確認に',hit:0});
+    r.prodHit.forEach(p=>reasons.push({t:'利用中: '+PRODS[p],hit:0}));
+    if(!r.dom) reasons.push({t:'周辺スキルとして',hit:0});
+    return {c:r.c,reasons:reasons.slice(0,4)};
+  });
+}
+
+/* ============================================================
+   保存層 — 試作では localStorage。本番は saveResponse / loadResponses / patchResponse を
+   Cloudflare Workers + D1 などの API 呼び出しに差し替える。
+   ============================================================ */
+const LS_KEY='rhsc26_responses_v1';
+let memStore=[];
+function loadResponses(){
+  try{ const raw=localStorage.getItem(LS_KEY); if(raw) return JSON.parse(raw); }catch(e){}
+  return memStore.slice();
+}
+function persist(list){
+  memStore=list.slice();
+  try{ localStorage.setItem(LS_KEY,JSON.stringify(list)); }catch(e){}
+}
+function saveResponse(r){ const l=loadResponses(); l.push(r); persist(l); }
+function patchResponse(id,patch){ const l=loadResponses(); const i=l.findIndex(x=>x.id===id); if(i>=0){ Object.assign(l[i],patch); persist(l);} }
+function clearResponses(){ persist([]); }
+
+/* サンプルデータ(デモ表示用。端末には保存しない) */
+function mulberry(seed){ return function(){ seed|=0; seed=seed+0x6D2B79F5|0; let t=Math.imul(seed^seed>>>15,1|seed); t=t+Math.imul(t^t>>>7,61|t)^t; return((t^t>>>14)>>>0)/4294967296; }; }
+function sampleResponses(){
+  const rnd=mulberry(1029);
+  const pickW=(obj)=>{ const ks=Object.keys(obj); const tot=ks.reduce((s,k)=>s+obj[k],0); let r=rnd()*tot; for(const k of ks){ r-=obj[k]; if(r<=0) return k; } return ks[0]; };
+  const out=[]; const base=Date.UTC(2026,9,29,0,30);
+  for(let i=0;i<56;i++){
+    const role=pickW({infra:40,sre:16,dev:18,mgr:16,other:10});
+    const n1=pickW({virt:30,auto:22,cn:20,ai:18,linux:14,sec:14});
+    const needs=[n1]; if(rnd()<.7){ let n2=pickW({virt:30,auto:22,cn:20,ai:18,linux:14,sec:14}); if(n2!==n1) needs.push(n2); }
+    const exp=+pickW({1:22,2:34,3:30,4:14});
+    const prods=[]; Object.keys(PRODS).forEach(p=>{ if(p!=='none'&&rnd()<.3) prods.push(p); }); if(!prods.length) prods.push(rnd()<.5?'none':'rhel');
+    const timing=pickW({t3:20,t6:34,t12:26,tbd:20});
+    const style=pickW({ilt:26,sub:36,self:20,team:18});
+    const a={role,needs,exp,prods,timing,style};
+    const top=recommend(a).map(x=>x.c.exam);
+    out.push({id:'s'+i,ts:base+i*8*60000,sample:true,role,needs,exp,prods,timing,style,top,trial:rnd()<(style==='sub'?.55:.2),email:rnd()<.2});
+  }
+  return out;
+}
+const SAMPLES=sampleResponses();
+
+/* ============================================================
+   集計
+   ============================================================ */
+function agg(list){
+  const z=(keys)=>Object.fromEntries(keys.map(k=>[k,0]));
+  const g={n:list.length,need:z(NEED_KEYS),first:z(NEED_KEYS),role:z(Object.keys(ROLES)),exp:z([1,2,3,4]),timing:z(Object.keys(TIMINGS)),style:z(Object.keys(STYLES)),prods:z(Object.keys(PRODS)),cross:{},top1:{},trial:0,email:0,today:0};
+  Object.keys(ROLES).forEach(r=>g.cross[r]=z(NEED_KEYS));
+  const d0=new Date(); d0.setHours(0,0,0,0);
+  list.forEach(r=>{
+    r.needs.forEach((n,i)=>{ g.need[n]++; if(i===0) g.first[n]++; g.cross[r.role][n]++; });
+    g.role[r.role]++; g.exp[r.exp]++; g.timing[r.timing]++; g.style[r.style]++;
+    r.prods.forEach(p=>g.prods[p]++);
+    if(r.top&&r.top[0]) g.top1[r.top[0]]=(g.top1[r.top[0]]||0)+1;
+    if(r.trial) g.trial++; if(r.email) g.email++;
+    if(r.ts>=d0.getTime()) g.today++;
+  });
+  return g;
+}
+function csvOf(list){
+  const q=v=>'"'+String(v==null?'':v).replace(/"/g,'""')+'"';
+  const head=['id','timestamp','role','need1','need2','experience','products','timing','style','top1','top2','top3','top4','top5','trial_link','email_optin','email'];
+  const rows=list.map(r=>[r.id,new Date(r.ts).toISOString(),r.role,r.needs[0]||'',r.needs[1]||'',r.exp,r.prods.join('|'),r.timing,r.style,...[0,1,2,3,4].map(i=>(r.top||[])[i]||''),r.trial?1:0,r.email?1:0,r.sample?'':(r.emailAddr||'')]);
+  return [head,...rows].map(x=>x.map(q).join(',')).join('\n');
+}
+
+/* ============================================================
+   UI
+   ============================================================ */
+const app=document.getElementById('app');
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let S={view:'start',qi:0,a:{role:null,needs:[],exp:null,prods:[],timing:null,style:null},res:null,recs:[],tab:'dash',samples:true,pinErr:false,confirmClear:false,csv:null,mailErr:'',mailOk:false};
+let lastActive=Date.now();
+
+function resetAnswers(){ S.a={role:null,needs:[],exp:null,prods:[],timing:null,style:null}; S.qi=0; S.res=null; S.recs=[]; S.mailErr=''; S.mailOk=false; }
+function go(view){ S.view=view; render(); window.scrollTo(0,0); }
+
+function header(right){
+  return `<div class="top"><div class="brand"><i></i>Red Hat Summit: Connect 2026 Tokyo ・ 教育サービスブース</div>${right||''}</div>`;
+}
+
+function vStart(){
+  return header()+`
+  <section class="hero">
+    <div>
+      <h1 class="display">あなたに合う<br><em>学習パス</em>を<br>30秒で診断</h1>
+      <p class="lead">6つの質問に答えると、あなたの役割・スキル・学び方に合った Red Hat のトレーニングコースと認定資格を5つ表示します。</p>
+      <ul class="facts"><li><b>6</b>問</li><li><b>45</b>秒ほど</li><li><b>5</b>件のおすすめ</li></ul>
+      <button class="btn primary" data-act="begin" style="min-width:240px">診断をはじめる</button>
+      <p class="notice">回答は匿名で集計し、今後のトレーニングの企画に使います。メールアドレスの入力は任意です。<br>試作版: 回答はこの端末のブラウザ内に保存されます。</p>
+    </div>
+    <aside class="stairs" aria-label="資格のレベル">
+      <h2>資格は4つのレベルで進みます</h2>
+      <ol>
+        <li style="--i:0"><span class="lvl">Lv100 初級</span><span class="code mono">EX180</span></li>
+        <li style="--i:1"><span class="lvl">Lv200 中級</span><span class="code mono">EX280</span></li>
+        <li style="--i:2"><span class="lvl">Lv300 上級</span><span class="code mono">EX380</span></li>
+        <li style="--i:3"><span class="lvl">Lv400 専門</span><span class="code mono">EX430</span></li>
+      </ol>
+      <small>OpenShift トラックの例。Linux・Ansible・AI にも同じ段階があります。</small>
+    </aside>
+  </section>
+  <div style="margin-top:18px"><button class="link-btn" data-act="staff">スタッフ用</button></div>`;
+}
+
+function optHtml(q,o,sel,idx){
+  const isOne=q.type==='one';
+  const on=isOne?String(sel)===String(o[0]):sel.includes(o[0]);
+  const ord=(!isOne&&q.k==='needs'&&on)?`<span class="ord">${sel.indexOf(o[0])+1}番目</span>`:'';
+  return `<li><button class="opt${on?' sel':''}" data-act="pick" data-v="${esc(o[0])}" aria-pressed="${on}">
+    <span class="mark ${isOne?'r':'c'}">${on?'✓':''}</span>
+    <span><span class="t">${esc(o[1])}</span>${o[2]?`<span class="s">${esc(o[2])}</span>`:''}</span>${ord}</button></li>`;
+}
+function vQ(){
+  const q=QS[S.qi]; const sel=S.a[q.k];
+  const prog=QS.map((_,i)=>`<span class="${i<=S.qi?'on':''}"></span>`).join('');
+  const multi=q.type==='multi';
+  const canNext=multi?sel.length>0:sel!==null;
+  return header(`<button class="link-btn" data-act="abort">最初に戻る</button>`)+`
+  <div class="progress" aria-hidden="true">${prog}</div>
+  <div class="qhead"><span>質問 ${S.qi+1} / ${QS.length}</span></div>
+  <h1 class="display q-title">${esc(q.t)}</h1>
+  <p class="q-hint">${esc(q.h)}</p>
+  <ul class="opts ${q.cols===2?'two':''}">${q.o.map((o,i)=>optHtml(q,o,sel,i)).join('')}</ul>
+  <div class="qfoot">
+    <button class="btn small" data-act="back">戻る</button>
+    ${multi?`<button class="btn primary" data-act="next" ${canNext?'':'disabled'}>${S.qi===QS.length-1?'結果を見る':'次へ'}</button>`:'<span></span>'}
+  </div>`;
+}
+
+function styleCta(){
+  const st=S.a.style;
+  const map={
+    ilt:{h:'講師付きのコースで集中して学ぶ',p:'クラスルームまたはオンラインの講師付きコースで、実機演習を通して短期間で身につけられます。',b:['コースと試験の一覧',ALL_COURSES]},
+    sub:{h:'ラーニングサブスクリプションを無料で試す',p:'RHEL・OpenShift・OpenStack・Ansible・AI まで学び放題。まずはトライアルで学習体験を確かめてください。',b:['無料トライアルを開始',RHLS_TRIAL]},
+    self:{h:'実技試験の認定資格で実力を証明する',p:'Red Hat の認定試験は実機を操作する実技形式です。上のおすすめから目標の資格を選べます。',b:['認定資格の一覧',CERT_PAGE]},
+    team:{h:'チーム全体の育成計画を相談する',p:'部署や会社単位の育成計画は、ブースのスタッフにお声がけください。オンラインでも相談できます。',b:['トレーニングのお問い合わせ',CONTACT]}
+  }[st];
+  const showTrial=st!=='sub';
+  return `<section class="cta"><h2>${esc(map.h)}</h2><p>${esc(map.p)}</p>
+    <div class="row"><a class="btn primary" href="${map.b[1]}" target="_blank" rel="noopener" data-act="trial">${esc(map.b[0])}</a>
+    ${showTrial?`<a class="btn" href="${RHLS_TRIAL}" target="_blank" rel="noopener" data-act="trial">学び放題を無料で試す</a>`:''}</div>
+    <p><a class="alt" href="${CERT_LIST}" target="_blank" rel="noopener">資格の全一覧とロードマップを見る</a></p></section>`;
+}
+function vResult(){
+  const a=S.a;
+  const chips=[`<span class="chip">${esc(ROLES[a.role])}</span>`,...a.needs.map(n=>`<span class="chip hit">${esc(NEEDS[n].l)}</span>`),`<span class="chip">${esc(EXPS[a.exp])}</span>`,`<span class="chip">${esc(TIMINGS[a.timing])}</span>`].join('');
+  const recs=S.recs.map((r,i)=>{
+    const c=r.c;
+    return `<li class="rec${i===0?' first':''}"><div class="rank" aria-label="ステップ${i+1}">${i+1}</div><div>
+      <div class="rec-meta"><span class="lv">Lv${c.lv*100} ${LVN[c.lv]}</span><span class="mono">${c.exam}</span>${i===0?'<span class="chip hit">最初の一歩</span>':''}</div>
+      <h3>${esc(c.n)}</h3><p>${esc(c.desc)}</p>
+      <div class="chips">${r.reasons.map(x=>`<span class="chip${x.hit?' hit':''}">${esc(x.t)}</span>`).join('')}</div>
+      <div class="course"><span><span class="mono">${c.course}</span></span><span class="cn">${esc(c.cn)}</span>
+        <a href="${c.curl}" target="_blank" rel="noopener">コース詳細</a><a href="${c.url}" target="_blank" rel="noopener">試験詳細</a></div>
+    </div></li>`;
+  }).join('');
+  const r=S.res;
+  const mail=r&&r.email?`<section class="mail"><h2>メールアドレスを登録しました</h2><p>ご協力ありがとうございます。</p></section>`:`
+    <section class="mail"><h2>結果をメールで受け取る(任意)</h2><p>診断結果とトライアルのご案内をお送りします。入力しなくても結果はご覧いただけます。</p>
+      <div class="f"><input id="em" type="email" inputmode="email" autocomplete="email" placeholder="name@company.co.jp" aria-label="メールアドレス">
+      <button class="btn small primary" data-act="mail">登録する</button></div>
+      <label class="cb"><input id="consent" type="checkbox"><span>Red Hat 教育サービスからの案内を受け取ることに同意します。</span></label>
+      ${S.mailErr?`<div class="err">${esc(S.mailErr)}</div>`:''}</section>`;
+  return header()+`
+  <div class="res-head"><h1 class="display">あなたに合ったトレーニングコースと資格はこちら！</h1></div>
+  <div class="profile">${chips}</div>
+  <p class="q-hint" style="margin:0 0 14px">入門レベルのものから順に並べています。上から順に進めると、無理なくステップアップできます。</p>
+  <ol class="recs">${recs}</ol>
+  ${styleCta()}
+  ${mail}
+  <div class="next-person"><button class="btn primary" data-act="again">次の方へ</button></div>`;
+}
+
+function vPin(){
+  return header(`<button class="link-btn" data-act="abort">戻る</button>`)+`<form class="pin" id="pinform"><h2 style="font-weight:900">スタッフ用 PIN</h2>
+    <input id="pin" inputmode="numeric" autocomplete="off" maxlength="8" aria-label="PIN">
+    ${S.pinErr?'<div class="err">PINが違います</div>':''}
+    <button class="btn primary" type="submit">開く</button>
+    <p class="note">試作用の PIN は ${STAFF_PIN}(イベント日)です。この画面の認証は端末内の簡易なもので、本番では API 側で認証します。</p></form>`;
+}
+
+function bar(label,v,max,total,top){
+  const w=max?Math.round(v/max*100):0; const pct=total?Math.round(v/total*100):0;
+  return `<div class="bar${top?' top':''}"><span class="lab">${esc(label)}</span><span class="tr"><span class="fl" style="display:block;width:${w}%"></span></span><span class="v">${v}<span style="color:var(--muted)"> ${pct}%</span></span></div>`;
+}
+function barsOf(map,labels,total,keys){
+  const ks=(keys||Object.keys(map)); const sorted=ks.slice().sort((x,y)=>map[y]-map[x]); const max=map[sorted[0]]||0;
+  return `<div class="bars">${sorted.map((k,i)=>bar(labels[k],map[k],max,total,i===0&&map[k]>0)).join('')}</div>`;
+}
+function allData(){ const real=loadResponses(); return {real,list:S.samples?real.concat(SAMPLES):real}; }
+
+function vStaff(){
+  const {real,list}=allData(); const g=agg(list);
+  const tabs=[['dash','集計'],['mon','モニター表示'],['data','データ']].map(t=>`<button class="tab${S.tab===t[0]?' on':''}" data-act="tab" data-v="${t[0]}">${t[1]}</button>`).join('');
+  const sampleBadge=S.samples?'<span class="badge">サンプル込み</span>':'';
+  let body='';
+  if(S.tab==='mon'){
+    body=`<section class="mon"><div class="mon-total"><b class="mono" style="font-family:var(--font-display)">${g.n}</b><span>人が回答${sampleBadge}</span></div>
+      <h2 style="font-size:clamp(16px,2.6vw,24px);font-weight:900;margin-bottom:14px">社内で学習や強化が必要なテクノロジー</h2>
+      ${barsOf(g.need,Object.fromEntries(NEED_KEYS.map(k=>[k,NEEDS[k].l])),g.n)}</section>`;
+  }else if(S.tab==='data'){
+    body=`<div class="panel"><h2>データの操作</h2><div class="tools">
+      <button class="btn small" data-act="csv">CSVをコピー</button>
+      <button class="btn small" data-act="samples">${S.samples?'サンプルを除く':'サンプルを含める'}</button>
+      ${S.confirmClear?`<button class="btn small primary" data-act="clear-yes">実データ ${real.length} 件を削除する</button><button class="btn small" data-act="clear-no">キャンセル</button>`:`<button class="btn small" data-act="clear" ${real.length?'':'disabled'}>実データを削除</button>`}
+      </div>
+      ${S.csv!==null?`<textarea class="csv" id="csvbox" readonly aria-label="CSV">${esc(S.csv)}</textarea><p class="note">コピーできなかったため、全選択してコピーしてください。</p>`:''}
+      <p class="note">実データ ${real.length} 件 / サンプル ${SAMPLES.length} 件。サンプルは画面表示専用で、端末には保存されません。</p></div>`;
+  }else{
+    const crossRows=Object.keys(ROLES).map(r=>{
+      const mx=Math.max(1,...NEED_KEYS.map(n=>g.cross[r][n]));
+      return `<tr><td>${esc(ROLES[r])}</td>${NEED_KEYS.map(n=>{const v=g.cross[r][n];return `<td class="h" style="background:color-mix(in srgb,var(--accent) ${Math.round(v/mx*38)}%,transparent)">${v||''}</td>`;}).join('')}<td class="h">${g.role[r]}</td></tr>`;
+    }).join('');
+    const topList=Object.keys(g.top1).sort((x,y)=>g.top1[y]-g.top1[x]).slice(0,6).map(ex=>{const c=CERTS.find(z=>z.exam===ex);return `<li><span class="nm"><span class="mono">${ex}</span> ${esc(c?c.n:'')}</span><span class="mono">${g.top1[ex]}</span></li>`;}).join('');
+    body=`
+    <div class="stats">
+      <div class="stat"><div class="n">${g.n}</div><div class="l">回答数</div></div>
+      <div class="stat"><div class="n">${g.today}</div><div class="l">本日の回答</div></div>
+      <div class="stat"><div class="n">${g.trial}</div><div class="l">トライアル等を開いた人</div></div>
+      <div class="stat"><div class="n">${g.email}</div><div class="l">メール登録</div></div>
+    </div>
+    <div class="panel"><h2>必要な領域<small>1人2つまで選択。割合は回答者数に対する比率</small></h2>${barsOf(g.need,Object.fromEntries(NEED_KEYS.map(k=>[k,NEEDS[k].l])),g.n)}</div>
+    <div class="panel"><h2>役割 × 必要な領域<small>人数(選択数)</small></h2><div class="scroll-x"><table class="x"><thead><tr><th>役割</th>${NEED_KEYS.map(n=>`<th>${esc(NEEDS[n].l)}</th>`).join('')}<th>回答者</th></tr></thead><tbody>${crossRows}</tbody></table></div></div>
+    <div class="grid2">
+      <div class="panel"><h2>学習を始めたい時期</h2>${barsOf(g.timing,TIMINGS,g.n,['t3','t6','t12','tbd'])}</div>
+      <div class="panel"><h2>学び方のスタイル</h2>${barsOf(g.style,STYLES,g.n)}</div>
+      <div class="panel"><h2>スキルレベル</h2>${barsOf(g.exp,EXPS,g.n,['1','2','3','4'])}</div>
+      <div class="panel"><h2>最初の一歩になった資格<small>5件のうち最も入門レベル</small></h2><ul class="toprec">${topList||'<li>まだデータがありません</li>'}</ul></div>
+    </div>`;
+  }
+  return header(`<button class="link-btn" data-act="abort">スタッフ画面を閉じる</button>`)+`
+  <h1 class="display" style="font-size:26px;margin-bottom:14px">ブース集計${S.tab!=='mon'?sampleBadge:''}</h1>
+  <div class="tabs">${tabs}</div>${body}`;
+}
+
+function render(){
+  const v={start:vStart,q:vQ,result:vResult,pin:vPin,staff:vStaff}[S.view];
+  app.innerHTML=v();
+  if(S.view==='staff'&&S.tab==='data'&&S.csv!==null){ const b=document.getElementById('csvbox'); if(b){ b.focus(); b.select(); } }
+  if(S.view==='pin'){ const p=document.getElementById('pin'); if(p) p.focus(); }
+}
+
+function next(){
+  if(S.qi<QS.length-1){ S.qi++; render(); window.scrollTo(0,0); }
+  else finish();
+}
+function finish(){
+  const a=S.a; const recs=recommend(a); S.recs=recs;
+  S.res={id:'r'+Date.now().toString(36)+Math.random().toString(36).slice(2,6),ts:Date.now(),role:a.role,needs:a.needs.slice(),exp:a.exp,prods:a.prods.slice(),timing:a.timing,style:a.style,top:recs.map(x=>x.c.exam),trial:false,email:false};
+  saveResponse(S.res);
+  go('result');
+}
+
+document.addEventListener('click',e=>{
+  const el=e.target.closest('[data-act]'); if(!el) return;
+  lastActive=Date.now();
+  const act=el.dataset.act, v=el.dataset.v;
+  if(act==='begin'){ resetAnswers(); go('q'); }
+  else if(act==='abort'){ resetAnswers(); S.csv=null; S.confirmClear=false; go('start'); }
+  else if(act==='staff'){ S.pinErr=false; go('pin'); }
+  else if(act==='back'){ if(S.qi>0){ S.qi--; render(); } else go('start'); }
+  else if(act==='next'){ next(); }
+  else if(act==='pick'){
+    const q=QS[S.qi];
+    if(q.type==='one'){
+      S.a[q.k]=q.k==='exp'?+v:v; render(); setTimeout(()=>{ if(S.view==='q'&&QS[S.qi]===q) next(); },180);
+    }else if(q.k==='needs'){
+      const arr=S.a.needs; const i=arr.indexOf(v);
+      if(i>=0) arr.splice(i,1); else { if(arr.length>=q.max) arr.shift(); arr.push(v); }
+      render();
+    }else{
+      let arr=S.a.prods; const i=arr.indexOf(v);
+      if(v==='none'){ arr=i>=0?[]:['none']; }
+      else{ arr=arr.filter(x=>x!=='none'); const j=arr.indexOf(v); if(j>=0) arr.splice(j,1); else arr.push(v); }
+      S.a.prods=arr; render();
+    }
+  }
+  else if(act==='trial'){ if(S.res&&!S.res.trial){ S.res.trial=true; patchResponse(S.res.id,{trial:true}); } }
+  else if(act==='mail'){
+    const em=document.getElementById('em').value.trim(); const ok=document.getElementById('consent').checked;
+    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)){ S.mailErr='メールアドレスの形式を確認してください。'; render(); }
+    else if(!ok){ S.mailErr='案内の受け取りに同意いただける場合はチェックを入れてください。'; render(); }
+    else{ S.mailErr=''; S.res.email=true; patchResponse(S.res.id,{email:true,emailAddr:em}); render(); }
+  }
+  else if(act==='again'){ resetAnswers(); go('start'); }
+  else if(act==='tab'){ S.tab=v; S.csv=null; S.confirmClear=false; render(); }
+  else if(act==='samples'){ S.samples=!S.samples; render(); }
+  else if(act==='clear'){ S.confirmClear=true; render(); }
+  else if(act==='clear-no'){ S.confirmClear=false; render(); }
+  else if(act==='clear-yes'){ clearResponses(); S.confirmClear=false; render(); }
+  else if(act==='csv'){
+    const text=csvOf(allData().list);
+    const fallback=()=>{ S.csv=text; render(); };
+    try{ navigator.clipboard.writeText(text).then(()=>{ S.csv=null; el.textContent='コピーしました'; },fallback); }catch(err){ fallback(); }
+  }
+});
+document.addEventListener('submit',e=>{
+  if(e.target.id==='pinform'){
+    e.preventDefault();
+    if(document.getElementById('pin').value.trim()===STAFF_PIN){ S.tab='dash'; S.pinErr=false; go('staff'); }
+    else{ S.pinErr=true; render(); }
+  }
+});
+['pointerdown','keydown'].forEach(t=>document.addEventListener(t,()=>{ lastActive=Date.now(); },true));
+
+if(typeof document!=='undefined'&&app){
+  setInterval(()=>{
+    if((S.view==='q'||S.view==='result')&&Date.now()-lastActive>120000){ resetAnswers(); go('start'); }
+    if(S.view==='staff'&&S.tab==='mon') render();
+  },3000);
+  render();
+}
+</script>
+</body>
+</html>

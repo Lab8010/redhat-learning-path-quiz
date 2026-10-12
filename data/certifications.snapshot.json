@@ -1,0 +1,602 @@
+{
+  "_note": "プロトタイプで使った現役資格(Active)31件。元データ: Lab8010/redhat-certifications-list の certifications.json。domains/products/devOnly/legacy は手作業で付与した値。Retired(EX260,EX229,EX480,EX221,EX240,EX482)は除外。EX342のnameは元データのtitleが試験コードと不一致のため、URLに合わせて修正している。",
+  "source": "https://lab8010.github.io/redhat-certifications-list/data/certifications.json",
+  "certs": [
+    {
+      "exam": "EX200",
+      "id": "rhcsa",
+      "level": 200,
+      "name": "System Administrator (RHCSA)",
+      "domains": [
+        "linux"
+      ],
+      "products": [
+        "rhel"
+      ],
+      "devOnly": false,
+      "legacy": false,
+      "course": "RH199",
+      "courseName": "RHCSA Rapid Track course",
+      "descriptionJa": "RHELの基本的なシステム管理スキルを認定。ファイルシステム・ユーザー・ネットワーク・ストレージ・パッケージ管理など日常運用の実践力。",
+      "examUrlJa": "https://www.redhat.com/ja/services/training/ex200-red-hat-certified-system-administrator-rhcsa-exam",
+      "courseUrlJa": "https://www.redhat.com/ja/services/training/rh199-rhcsa-rapid-track-course"
+    },
+    {
+      "exam": "EX342",
+      "id": "ex342",
+      "level": 300,
+      "name": "Specialist in Linux Diagnostics and Troubleshooting",
+      "domains": [
+        "linux"
+      ],
+      "products": [
+        "rhel"
+      ],
+      "devOnly": false,
+      "legacy": false,
+      "course": "RH342",
+      "courseName": "Red Hat Enterprise Linux Diagnostics and Troubleshooting",
+      "descriptionJa": "RHELの複雑な障害を体系的に診断・解決するスキルを認定。ブート障害やネットワーク障害、性能劣化に対応。",
+      "examUrlJa": "https://www.redhat.com/ja/services/training/ex342-red-hat-%E3%82%A8%E3%82%AD%E3%82%B9%E3%83%91%E3%83%BC%E3%83%88%E8%A9%A6%E9%A8%93-red-hat-enterprise-linux-diagnostics-and-troubleshooting",
+      "courseUrlJa": "https://www.redhat.com/ja/services/training/rh342-red-hat-enterprise-linux-diagnostics-and-troubleshooting"
+    },
+    {
+      "exam": "EX210",
+      "id": "ex210",
+      "level": 200,
+      "name": "Specialist in Cloud Infrastructure",
+      "domains": [],
+      "products": [
+        "other"
+      ],
+      "devOnly": false,
+      "legacy": false,
+      "course": "CL210",
+      "courseName": "Red Hat OpenStack Administration II",
+      "descriptionJa": "OpenStackによるプライベートクラウドの構築・管理スキルを認定。",
+      "examUrlJa": "https://www.redhat.com/ja/services/training/ex210-red-hat-certified-system-administrator-red-hat-openstack-exam",
+      "courseUrlJa": "https://www.redhat.com/ja/services/training/cl210-red-hat-openstack-administration-ii"
+    },
+    {
+      "exam": "EX358",
+      "id": "ex358",
+      "level": 300,
+      "name": "Specialist in Services Management and Automation",
+      "domains": [
+        "linux",
+        "auto"
+      ],
+      "products": [
+        "rhel"
+      ],
+      "devOnly": false,
+      "legacy": false,
+      "course": "RH358",
+      "courseName": "Red Hat Services Management and Automation",
+      "descriptionJa": "RHELのサービス管理と自動化スキルを認定。systemd・SELinux・Podman・NFSなどを効率的に管理。",
+      "examUrlJa": "https://www.redhat.com/ja/services/training/ex358-red-hat-certified-specialist-services-management-automation-exam",
+      "courseUrlJa": "https://www.redhat.com/ja/services/training/rh358-red-hat-services-management-automation"
+    },
+    {
+      "exam": "EX362",
+      "id": "ex362",
+      "level": 300,
+      "name": "Specialist in Identity Management",
+      "domains": [
+        "linux",
+        "sec"
+      ],
+      "products": [
+        "rhel"
+      ],
+      "devOnly": false,
+      "legacy": false,
+      "course": "RH362",
+      "courseName": "Red Hat Security: Identity Management and Authentication",
+      "descriptionJa": "Red Hat IdMによる統合認証基盤の構築・管理スキルを認定。LDAP・Kerberos・DNSを組み合わせた認証・認可の集中管理。",
+      "examUrlJa": "https://www.redhat.com/ja/services/training/ex362-red-hat-certified-specialist-identity-management-exam",
+      "courseUrlJa": "https://www.redhat.com/ja/services/training/rh362-red-hat-security-identity-management-and-authentication"
+    },
+    {
+      "exam": "EX403",
+      "id": "ex403",
+      "level": 400,
+      "name": "Specialist in Deployment and Systems Management",
+      "domains": [
+        "auto",
+        "linux"
+      ],
+      "products": [
+        "rhel"
+      ],
+      "devOnly": false,
+      "legacy": false,
+      "course": "RH403",
+      "courseName": "Red Hat Satellite 6 Administration",
+      "descriptionJa": "Red Hat Satelliteによる大規模システムの展開・管理スキルを認定。パッチ・プロビジョニング・コンプライアンス管理。",
+      "examUrlJa": "https://www.redhat.com/ja/services/training/ex403-red-hat-certificate-expertise-deployment-systems-management-exam",
+      "courseUrlJa": "https://www.redhat.com/ja/services/training/rh403-red-hat-satellite-6-administration"
+    },
+    {
+      "exam": "EX415",
+      "id": "ex415",
+      "level": 400,
+      "name": "Specialist in Security: Linux",
+      "domains": [
+        "sec",
+        "linux"
+      ],
+      "products": [
+        "rhel"
+      ],
+      "devOnly": false,
+      "legacy": false,
+      "course": "RH415",
+      "courseName": "Red Hat Security: Linux in Physical, Virtual, and Cloud",
+      "descriptionJa": "RHELのセキュリティ強化スキルを認定。SELinux・OpenSCAP・auditd・firewallなどでシステムを堅牢化。",
+      "examUrlJa": "https://www.redhat.com/ja/services/training/ex415-red-hat-certified-specialist-security-linux-exam",
+      "courseUrlJa": "https://www.redhat.com/ja/services/training/rh415-red-hat-security-linux-physical-virtual-and-cloud"
+    },
+    {
+      "exam": "EX436",
+      "id": "ex436",
+      "level": 400,
+      "name": "Specialist in High Availability Clustering",
+      "domains": [
+        "linux"
+      ],
+      "products": [
+        "rhel"
+      ],
+      "devOnly": false,
+      "legacy": false,
+      "course": "RH436",
+      "courseName": "Red Hat High Availability Clustering",
+      "descriptionJa": "Pacemakerによる高可用性クラスタの構築・管理スキルを認定。フェイルオーバーと共有ストレージで継続稼働を実現。",
+      "examUrlJa": "https://www.redhat.com/ja/services/training/ex436-red-hat-certificate-expertise-clustering-and-storage-management-exam",
+      "courseUrlJa": "https://www.redhat.com/ja/services/training/rh436-red-hat-high-availability-clustering"
+    },
+    {
+      "exam": "EX442",
+      "id": "ex442",
+      "level": 400,
+      "name": "Specialist in Linux Performance Tuning",
+      "domains": [
+        "linux"
+      ],
+      "products": [
+        "rhel"
+      ],
+      "devOnly": false,
+      "legacy": false,
+      "course": "RH442",
+      "courseName": "Red Hat Enterprise Linux Performance Tuning",
+      "descriptionJa": "RHELの性能分析・最適化スキルを認定。CPU・メモリ・ネットワーク・ストレージのボトルネックを特定し改善。",
+      "examUrlJa": "https://www.redhat.com/ja/services/training/ex442-red-hat-certificate-expertise-performance-tuning-exam",
+      "courseUrlJa": "https://www.redhat.com/ja/services/training/rh442-red-hat-enterprise-linux-performance-tuning"
+    },
+    {
+      "exam": "EX294",
+      "id": "rhce",
+      "level": 200,
+      "name": "Engineer in Ansible (RHCE)",
+      "domains": [
+        "auto",
+        "linux"
+      ],
+      "products": [
+        "aap",
+        "rhel"
+      ],
+      "devOnly": false,
+      "legacy": false,
+      "course": "AU294",
+      "courseName": "Red Hat Enterprise Linux Automation with Ansible",
+      "descriptionJa": "Ansibleによるシステム管理の自動化スキルを認定。プレイブック作成・インベントリ管理・ロール開発。",
+      "examUrlJa": "https://www.redhat.com/ja/services/training/ex294-red-hat-certified-engineer-rhce-exam-red-hat-enterprise-linux-9",
+      "courseUrlJa": "https://www.redhat.com/ja/services/training/au294-red-hat-linux-automation-with-ansible"
+    },
+    {
+      "exam": "EX336",
+      "id": "ex336",
+      "level": 300,
+      "name": "Specialist in Automating OpenShift Virtual Machine Management",
+      "domains": [
+        "auto",
+        "virt"
+      ],
+      "products": [
+        "virt",
+        "aap"
+      ],
+      "devOnly": false,
+      "legacy": false,
+      "course": "DO336",
+      "courseName": "Automate and Manage Red Hat OpenShift Virtualization with Ansible",
+      "descriptionJa": "AnsibleによるOpenShift仮想マシンの自動化・移行スキルを認定。VMのプロビジョニングと移行ワークフローの構築。",
+      "examUrlJa": "https://www.redhat.com/ja/services/training/ex336-red-hat-certified-specialist-automating-openshift-virtual-machine-management-exam",
+      "courseUrlJa": "https://www.redhat.com/ja/services/training/do336-automate-manage-red-hat-openshift-virtualization-with-ansible"
+    },
+    {
+      "exam": "EX374",
+      "id": "ex374",
+      "level": 300,
+      "name": "Specialist in Automation with Ansible Automation Platform",
+      "domains": [
+        "auto"
+      ],
+      "products": [
+        "aap"
+      ],
+      "devOnly": false,
+      "legacy": false,
+      "course": "AU374",
+      "courseName": "Developing Advanced Automation with Red Hat Ansible Automation Platform",
+      "descriptionJa": "Ansible Automation Platformによる高度な自動化コンテンツの開発スキルを認定。カスタムモジュール・コレクション・実行環境の作成。",
+      "examUrlJa": "https://www.redhat.com/ja/services/training/ex374-red-hat-certified-specialist-developing-automation-ansible-automation-platform-exam",
+      "courseUrlJa": "https://www.redhat.com/ja/services/training/au374-developing-advanced-automation-red-hat-ansible-automation-platform"
+    },
+    {
+      "exam": "EX417",
+      "id": "ex417",
+      "level": 400,
+      "name": "Specialist in Microsoft Windows Automation with Ansible",
+      "domains": [
+        "auto"
+      ],
+      "products": [
+        "aap"
+      ],
+      "devOnly": false,
+      "legacy": false,
+      "course": "DO417",
+      "courseName": "Microsoft Windows Automation with Red Hat Ansible Automation Platform",
+      "descriptionJa": "AnsibleによるWindows環境の自動化スキルを認定。",
+      "examUrlJa": "https://www.redhat.com/ja/services/training/ex417-red-hat-certified-specialist-microsoft-windows-automation-ansible-exam",
+      "courseUrlJa": "https://www.redhat.com/ja/services/training/do417-microsoft-windows-automation-red-hat-ansible-automation-platform"
+    },
+    {
+      "exam": "EX457",
+      "id": "ex457",
+      "level": 400,
+      "name": "Specialist in Ansible Network Automation",
+      "domains": [
+        "auto"
+      ],
+      "products": [
+        "aap"
+      ],
+      "devOnly": false,
+      "legacy": false,
+      "course": "DO457",
+      "courseName": "Network Automation with Red Hat Ansible Automation Platform",
+      "descriptionJa": "Ansibleによるネットワーク機器の自動化スキルを認定。",
+      "examUrlJa": "https://www.redhat.com/ja/services/training/ex457-red-hat-certified-specialist-in-ansible-network-automation-exam",
+      "courseUrlJa": "https://www.redhat.com/ja/services/training/do457-ansible-network-automation"
+    },
+    {
+      "exam": "EX467",
+      "id": "ex467",
+      "level": 400,
+      "name": "Specialist in Managing Automation with Ansible Automation Platform",
+      "domains": [
+        "auto"
+      ],
+      "products": [
+        "aap"
+      ],
+      "devOnly": false,
+      "legacy": false,
+      "course": "DO467",
+      "courseName": "Managing Enterprise Automation with Red Hat Ansible Automation Platform",
+      "descriptionJa": "Ansible Automation Platformの管理・運用スキルを認定。実行環境・インベントリ・ジョブテンプレートを統合管理。",
+      "examUrlJa": "https://www.redhat.com/ja/services/training/ex467-red-hat-certified-specialist-managing-automation-ansible-automation-platform-exam",
+      "courseUrlJa": "https://www.redhat.com/ja/services/training/do467-managing-enterprise-automation-red-hat-ansible-automation-platform"
+    },
+    {
+      "exam": "EX180",
+      "id": "ex180",
+      "level": 100,
+      "name": "Technologist in OpenShift",
+      "domains": [
+        "cn"
+      ],
+      "products": [
+        "ocp"
+      ],
+      "devOnly": false,
+      "legacy": false,
+      "course": "DO180",
+      "courseName": "Red Hat OpenShift Administration I: Operating a Production Cluster",
+      "descriptionJa": "OpenShiftの基本操作スキルを認定。コンテナのデプロイ・管理・スケーリングなどの基礎。",
+      "examUrlJa": "https://www.redhat.com/ja/services/training/ex180-red-hat-certified-technologist-in-openshift-exam",
+      "courseUrlJa": "https://www.redhat.com/ja/services/training/red-hat-openshift-administration-i-operating-a-production-cluster"
+    },
+    {
+      "exam": "EX156",
+      "id": "ex156",
+      "level": 100,
+      "name": "Technologist in OpenShift Virtualization",
+      "domains": [
+        "virt"
+      ],
+      "products": [
+        "virt",
+        "ocp"
+      ],
+      "devOnly": false,
+      "legacy": false,
+      "course": "DO156",
+      "courseName": "Red Hat OpenShift Virtualization Administration I: Operating Virtual Machines",
+      "descriptionJa": "OpenShift Virtualizationによる仮想マシンの基本操作スキルを認定。VMの作成・起動・停止・移行など。",
+      "examUrlJa": "https://www.redhat.com/ja/services/training/ex156-red-hat-certified-technologist-in-openshift-virtualization",
+      "courseUrlJa": "https://www.redhat.com/ja/services/training/do156-red-hat-openshift-virtualization-administration-i-operating-virtual-machines"
+    },
+    {
+      "exam": "EX280",
+      "id": "ex280",
+      "level": 200,
+      "name": "System Administrator in OpenShift",
+      "domains": [
+        "cn"
+      ],
+      "products": [
+        "ocp"
+      ],
+      "devOnly": false,
+      "legacy": false,
+      "course": "DO280",
+      "courseName": "Red Hat OpenShift Administration II: Configuring a Production Cluster",
+      "descriptionJa": "OpenShiftクラスタの管理スキルを認定。マルチテナント設定・セキュリティポリシー・ネットワーク・ストレージ管理など本番運用に必要な力。",
+      "examUrlJa": "https://www.redhat.com/ja/services/training/red-hat-certified-openshift-administrator-exam",
+      "courseUrlJa": "https://www.redhat.com/ja/services/training/red-hat-openshift-administration-ii-configuring-a-production-cluster"
+    },
+    {
+      "exam": "EX282",
+      "id": "ex282",
+      "level": 400,
+      "name": "Specialist in OpenShift Networking",
+      "domains": [
+        "cn"
+      ],
+      "products": [
+        "ocp"
+      ],
+      "devOnly": false,
+      "legacy": false,
+      "course": "DO282",
+      "courseName": "Red Hat OpenShift Administration III: Scaling Deployments in the Enterprise",
+      "descriptionJa": "OpenShiftのネットワーク設定・管理スキルを認定。クラスタネットワークやルーティングの運用。",
+      "examUrlJa": "https://www.redhat.com/ja/services/training/red-hat-certified-specialist-openshift-networking",
+      "courseUrlJa": "https://www.redhat.com/ja/services/training/do282-red-hat-openshift-administration-iii"
+    },
+    {
+      "exam": "EX380",
+      "id": "ex380",
+      "level": 300,
+      "name": "Engineer in OpenShift",
+      "domains": [
+        "cn",
+        "auto"
+      ],
+      "products": [
+        "ocp"
+      ],
+      "devOnly": false,
+      "legacy": false,
+      "course": "DO380",
+      "courseName": "Red Hat OpenShift Administration III: Scaling Deployments in the Enterprise",
+      "descriptionJa": "OpenShiftの自動化とインテグレーションのスキルを認定。GitOps・Tekton・Argo CDによるCI/CDパイプラインの構築・運用。",
+      "examUrlJa": "https://www.redhat.com/ja/services/training/ex380-certified-specialist-openshift-automation-exam",
+      "courseUrlJa": "https://www.redhat.com/ja/services/training/do380-red-hat-openshift-administration-iii-scaling-deployments-in-the-enterprise"
+    },
+    {
+      "exam": "EX316",
+      "id": "ex316",
+      "level": 300,
+      "name": "Specialist in OpenShift Virtualization",
+      "domains": [
+        "virt"
+      ],
+      "products": [
+        "virt",
+        "ocp"
+      ],
+      "devOnly": false,
+      "legacy": false,
+      "course": "DO256",
+      "courseName": "Red Hat OpenShift Virtualization Administration II: Configuring Production Virtual Machines",
+      "descriptionJa": "OpenShift Virtualizationによる仮想マシンの本番運用スキルを認定。ライブマイグレーション・ネットワーク・ストレージ設定など。",
+      "examUrlJa": "https://www.redhat.com/ja/services/training/red-hat-certified-specialist-openshift-virtualization-ex316",
+      "courseUrlJa": "https://www.redhat.com/ja/services/training/do256-red-hat-openshift-virtualization-administration-ii-configuring-production-virtual-machines"
+    },
+    {
+      "exam": "EX370",
+      "id": "ex370",
+      "level": 300,
+      "name": "Specialist in OpenShift Data Foundation",
+      "domains": [
+        "cn"
+      ],
+      "products": [
+        "ocp"
+      ],
+      "devOnly": false,
+      "legacy": false,
+      "course": "DO370",
+      "courseName": "Enterprise Kubernetes Storage with Red Hat OpenShift Data Foundation",
+      "descriptionJa": "OpenShift Data Foundationによる永続ストレージの構築・管理スキルを認定。",
+      "examUrlJa": "https://www.redhat.com/ja/services/training/ex370-red-hat-certified-specialist-in-openshift-data-foundation-exam",
+      "courseUrlJa": "https://www.redhat.com/ja/services/training/do370-enterprise-kubernetes-storage-with-red-hat-openshift-data-foundation"
+    },
+    {
+      "exam": "EX430",
+      "id": "ex430",
+      "level": 400,
+      "name": "Specialist in OpenShift Advanced Cluster Security",
+      "domains": [
+        "sec",
+        "cn"
+      ],
+      "products": [
+        "ocp"
+      ],
+      "devOnly": false,
+      "legacy": false,
+      "course": "DO430",
+      "courseName": "Securing Kubernetes Clusters with Red Hat Advanced Cluster Security",
+      "descriptionJa": "Red Hat Advanced Cluster Securityによるコンテナセキュリティの実装スキルを認定。脆弱性管理・ポリシー適用・ネットワークセグメンテーション。",
+      "examUrlJa": "https://www.redhat.com/ja/services/training/ex430-red-hat-certified-specialist-openshift-advanced-cluster-security-exam",
+      "courseUrlJa": "https://www.redhat.com/ja/services/training/do430-securing-kubernetes-clusters-red-hat-advanced-cluster-security"
+    },
+    {
+      "exam": "EX432",
+      "id": "ex432",
+      "level": 400,
+      "name": "Specialist in OpenShift Advanced Cluster Management",
+      "domains": [
+        "cn"
+      ],
+      "products": [
+        "ocp"
+      ],
+      "devOnly": false,
+      "legacy": false,
+      "course": "DO432",
+      "courseName": "Multicluster Management with Red Hat Advanced Cluster Management for Kubernetes",
+      "descriptionJa": "Red Hat Advanced Cluster Managementによるマルチクラスタ管理スキルを認定。",
+      "examUrlJa": "https://www.redhat.com/ja/services/training/ex432-red-hat-certified-specialist-openshift-advanced-cluster-management-exam",
+      "courseUrlJa": "https://www.redhat.com/ja/services/training/do432-multicluster-management-red-hat-advanced-cluster-management-kubernetes"
+    },
+    {
+      "exam": "EX267",
+      "id": "ex267",
+      "level": 200,
+      "name": "Developer in AI",
+      "domains": [
+        "ai"
+      ],
+      "products": [
+        "ai",
+        "ocp"
+      ],
+      "devOnly": false,
+      "legacy": false,
+      "course": "AI267",
+      "courseName": "Developing and Deploying AI/ML Applications on Red Hat OpenShift AI",
+      "descriptionJa": "OpenShift AIによるAI/MLワークロードの展開・管理スキルを認定。モデルのトレーニング・サービング・パイプライン管理。",
+      "examUrlJa": "https://www.redhat.com/ja/services/training/ex267-red-hat-certified-specialist-openshift-ai",
+      "courseUrlJa": "https://www.redhat.com/ja/services/training/developing-and-deploying-aiml-applications-red-hat-openshift-ai-ai267"
+    },
+    {
+      "exam": "EX188",
+      "id": "ex188",
+      "level": 100,
+      "name": "Specialist in Container Management",
+      "domains": [
+        "cn"
+      ],
+      "products": [
+        "ocp"
+      ],
+      "devOnly": false,
+      "legacy": false,
+      "course": "DO188",
+      "courseName": "Red Hat OpenShift Development I: Introduction to Containers with Podman",
+      "descriptionJa": "Podmanによるコンテナの基本操作スキルを認定。ビルド・実行・管理・カスタマイズ。",
+      "examUrlJa": "https://www.redhat.com/ja/services/training/ex188-red-hat-certified-specialist-containers-exam",
+      "courseUrlJa": "https://www.redhat.com/ja/services/training/do188-red-hat-open-shift-development-introduction-containers-with-podman"
+    },
+    {
+      "exam": "EX288",
+      "id": "ex288",
+      "level": 200,
+      "name": "Engineer in Cloud-native Applications",
+      "domains": [
+        "cn"
+      ],
+      "products": [
+        "ocp"
+      ],
+      "devOnly": true,
+      "legacy": false,
+      "course": "DO288",
+      "courseName": "Red Hat OpenShift Developer II: Building and Deploying Cloud-native Applications",
+      "descriptionJa": "OpenShift上のコンテナアプリケーション開発・デプロイスキルを認定。Source-to-Image・Helm・CI/CD。",
+      "examUrlJa": "https://www.redhat.com/ja/services/training/ex288-red-hat-certified-openshift-application-developer-exam",
+      "courseUrlJa": "https://www.redhat.com/ja/services/training/red-hat-openshift-developer-ii-building-and-deploying-cloud-native-applications"
+    },
+    {
+      "exam": "EX183",
+      "id": "ex183",
+      "level": 100,
+      "name": "Specialist in Enterprise Application Development",
+      "domains": [],
+      "products": [
+        "other"
+      ],
+      "devOnly": true,
+      "legacy": false,
+      "course": "AD183",
+      "courseName": "Red Hat Application Development I: Programming in Java EE",
+      "descriptionJa": "Java EEによるエンタープライズアプリ開発の基礎スキルを認定。",
+      "examUrlJa": "https://www.redhat.com/ja/services/training/ex183-red-hat-certified-enterprise-application-developer-exam",
+      "courseUrlJa": "https://www.redhat.com/ja/services/training/ad183-red-hat-application-development-i-programming-java-ee"
+    },
+    {
+      "exam": "EX248",
+      "id": "ex248",
+      "level": 200,
+      "name": "Specialist in Enterprise Application Server Administration",
+      "domains": [],
+      "products": [
+        "other"
+      ],
+      "devOnly": false,
+      "legacy": true,
+      "course": "AD248",
+      "courseName": "Red Hat JBoss Application Administration I",
+      "descriptionJa": "JBoss EAPの管理スキルを認定。",
+      "examUrlJa": "https://www.redhat.com/ja/services/training/ex248-red-hat-certified-jboss-administration-rhcja-exam",
+      "courseUrlJa": "https://www.redhat.com/ja/services/training/ad248-red-hat-jboss-application-administration-i"
+    },
+    {
+      "exam": "EX328",
+      "id": "ex328",
+      "level": 300,
+      "name": "Specialist in Building Resilient Microservices",
+      "domains": [
+        "cn"
+      ],
+      "products": [
+        "ocp"
+      ],
+      "devOnly": true,
+      "legacy": false,
+      "course": "DO328",
+      "courseName": "Building Resilient Microservices with Istio and Red Hat OpenShift Service Mesh",
+      "descriptionJa": "Istioとサービスメッシュによるマイクロサービスの耐障害性設計スキルを認定。",
+      "examUrlJa": "https://www.redhat.com/ja/services/training/ex328-red-hat-certified-specialist-in-building-resilient-microservices-exam",
+      "courseUrlJa": "https://www.redhat.com/ja/services/training/do328-building-resilient-microservices-with-istio-and-red-hat-openshift-service-mesh"
+    },
+    {
+      "exam": "EX378",
+      "id": "ex378",
+      "level": 300,
+      "name": "Specialist in Cloud-native Development",
+      "domains": [
+        "cn"
+      ],
+      "products": [
+        "ocp"
+      ],
+      "devOnly": true,
+      "legacy": false,
+      "course": "DO378",
+      "courseName": "Red Hat Cloud-native Microservices Development with Quarkus",
+      "descriptionJa": "Quarkusによるクラウドネイティブなマイクロサービス開発スキルを認定。",
+      "examUrlJa": "https://www.redhat.com/ja/services/training/ex378-red-hat-certified-cloud-native-developer-exam",
+      "courseUrlJa": "https://www.redhat.com/ja/services/training/red-hat-cloud-native-microservices-development-quarkus-do378"
+    }
+  ]
+}
