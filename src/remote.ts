@@ -2,7 +2,7 @@ import { API_BASE } from './config';
 import { EXPS, NEED_KEYS, PRODS, ROLES, ROLE_ALIAS, STYLES, TIMINGS, type Domain, type Response } from './model';
 
 /** API が返す1行(1回答。すべて文字列) */
-export interface RawRow { ts: string; role: string; needs: string; exp: string | number; prods: string; timing: string; style: string; top: string }
+export interface RawRow { id?: string; ts: string; role: string; needs: string; exp: string | number; prods: string; timing: string; style: string; top: string }
 
 const split = (s: string) => String(s ?? '').split(',').map((x) => x.trim()).filter(Boolean);
 
@@ -18,7 +18,7 @@ export function parseRows(raw: RawRow[]): Response[] {
     if (!(role in ROLES) || !(exp in EXPS) || !(r.timing in TIMINGS) || !(r.style in STYLES) || Number.isNaN(ts)) return;
     if (!needs.length || needs.some((n) => !NEED_KEYS.includes(n as Domain))) return;
     if (!prods.length || prods.some((p) => !(p in PRODS))) return;
-    out.push({ id: 'g' + i, ts, role, needs: needs as Domain[], exp, prods, timing: r.timing, style: r.style, top: split(r.top), trial: false, forms: false, synced: true });
+    out.push({ id: r.id || 'g' + i, ts, role, needs: needs as Domain[], exp, prods, timing: r.timing, style: r.style, top: split(r.top), trial: false, forms: false, synced: true });
   });
   return out;
 }
@@ -33,6 +33,21 @@ export async function fetchRows(url: string, token: string, fetcher: typeof fetc
     if (j && j.ok === true && Array.isArray(j.rows)) return { ok: true, rows: parseRows(j.rows) };
     if (j && j.error === 'unauthorized') return { ok: false, error: 'unauthorized' };
     return { ok: false, error: 'format' };
+  } catch {
+    return { ok: false, error: 'network' };
+  }
+}
+
+export type DeleteTarget = { mode: 'ids'; ids: string[] } | { mode: 'since'; since: number } | { mode: 'all' };
+export type DeleteResult = { ok: true; deleted: number } | { ok: false; error: 'unauthorized' | 'network' | 'invalid' };
+
+/** Cloudflare 上の回答を削除する(元に戻せない)。合言葉が必要 */
+export async function deleteRows(url: string, token: string, target: DeleteTarget, fetcher: typeof fetch = fetch): Promise<DeleteResult> {
+  try {
+    const res = await fetcher(url, { method: 'POST', credentials: 'omit', referrerPolicy: 'no-referrer', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ token, ...target }) });
+    const j = await res.json();
+    if (j && j.ok === true) return { ok: true, deleted: Number(j.deleted) || 0 };
+    return { ok: false, error: j && j.error === 'unauthorized' ? 'unauthorized' : 'invalid' };
   } catch {
     return { ok: false, error: 'network' };
   }

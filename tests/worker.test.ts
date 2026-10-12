@@ -10,11 +10,21 @@ function fakeDb() {
       return {
         bind(...a: unknown[]) {
           return {
-            async run() {
+            async run(): Promise<{ meta?: { changes?: number } }> {
+              if (sql.startsWith('DELETE')) {
+                const before = rows.length;
+                let keep = rows.filter(() => false);
+                if (sql === 'DELETE FROM responses') keep = [];
+                else if (sql.includes('ts >= ?')) keep = rows.filter((r) => Number(r.ts) < Number(a[0]));
+                else keep = rows.filter((r) => !a.includes(r.id));
+                rows.splice(0, rows.length, ...keep);
+                return { meta: { changes: before - rows.length } };
+              }
               if (sql.startsWith('INSERT OR IGNORE')) {
                 const [id, ts, role, needs, exp, prods, timing, style, top, created] = a;
                 if (!rows.some((r) => r.id === id)) rows.push({ id, ts, role, needs, exp, prods, timing, style, top, created });
               }
+              return {};
             },
             async all<T>() { return { results: rows.slice().sort((x, y) => Number(x.ts) - Number(y.ts)) as T[] }; },
             async first<T>() { return { n: rows.filter((r) => Number(r.created) > Number(a[0])).length } as T; },
@@ -85,6 +95,28 @@ describe('Worker API', () => {
     const res = await handle(post('/api/rows', { token: 'a-long-secret-token' }, ORIGIN, false), env(db));
     const j = await res.json() as { ok: boolean; rows: Record<string, string>[] };
     expect(j.ok).toBe(true);
-    expect(j.rows[0]).toEqual({ ts: '2026-10-29T01:00:00.000Z', role: 'planner', needs: 'cn,virt', exp: '2', prods: 'rhel', timing: 't6', style: 'ilt', top: 'EX180,EX280' });
+    expect(j.rows[0]).toEqual({ id: 'r1abc234', ts: '2026-10-29T01:00:00.000Z', role: 'planner', needs: 'cn,virt', exp: '2', prods: 'rhel', timing: 't6', style: 'ilt', top: 'EX180,EX280' });
+  });
+  it('削除: 合言葉が必要で、選んだ回答・日時以降・全件を削除できる', async () => {
+    const { db, rows } = fakeDb();
+    const ids = ['id1abcdef', 'id2abcdef', 'id3abcdef'];
+    for (const [i, id] of ids.entries()) await handle(post('/api/responses', { ...good, id, ts: good.ts + i * 60_000 }), env(db, { MAX_PER_MIN: '99' }));
+    const del = (b: Record<string, unknown>, token = 'a-long-secret-token') => handle(post('/api/delete', { token, ...b }), env(db));
+    expect((await del({ mode: 'all' }, 'wrong')).status).toBe(401);
+    expect(rows).toHaveLength(3);
+    expect(await (await del({ mode: 'ids', ids: ['id1abcdef'] })).json()).toEqual({ ok: true, deleted: 1 });
+    expect(await (await del({ mode: 'since', since: good.ts + 120_000 })).json()).toEqual({ ok: true, deleted: 1 });
+    expect(rows.map((r) => r.id)).toEqual(['id2abcdef']);
+  });
+  it('削除: 不正な指定は 400、全件削除は件数を返す', async () => {
+    const { db } = fakeDb();
+    await handle(post('/api/responses', good), env(db));
+    const del = (b: Record<string, unknown>) => handle(post('/api/delete', { token: 'a-long-secret-token', ...b }), env(db));
+    expect((await del({ mode: 'ids', ids: [] })).status).toBe(400);
+    expect((await del({ mode: 'ids', ids: ["x'; DROP TABLE responses;--"] })).status).toBe(400);
+    expect((await del({ mode: 'ids', ids: Array.from({ length: 91 }, (_, i) => 'a' + i) })).status).toBe(400);
+    expect((await del({ mode: 'since', since: 'x' })).status).toBe(400);
+    expect((await del({})).status).toBe(400);
+    expect(await (await del({ mode: 'all' })).json()).toEqual({ ok: true, deleted: 1 });
   });
 });

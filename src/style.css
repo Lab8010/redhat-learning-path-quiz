@@ -160,3 +160,35 @@ textarea.csv{width:100%;min-height:140px;margin-top:12px;padding:10px;font:12px/
 .mail .qr svg{width:168px;height:168px;background:#fff;padding:8px;border-radius:6px}
 .mail .qr small{color:var(--muted);font-size:12px}
 .mail .btn{text-align:center}
+
+/* 学び方に応じたサービス紹介 */
+.cta .svcs{display:grid;gap:10px;grid-template-columns:1fr}
+@media (min-width:680px){.cta .svcs{grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}}
+.svc{display:grid;gap:4px;padding:14px 16px;border:1px solid color-mix(in srgb,var(--surface) 35%,transparent);border-radius:8px;color:var(--surface);text-decoration:none;background:color-mix(in srgb,var(--surface) 8%,transparent)}
+.svc:hover{border-color:var(--surface)}
+.svc b{font-size:17px;font-weight:900}
+.svc span{font-size:13.5px;line-height:1.6;opacity:.92}
+/* 削除 */
+.panel h3.sub{font-size:13px;font-weight:900;margin:14px 0 8px;color:var(--muted)}
+.dellist{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:6px;max-height:320px;overflow:auto}
+.delrow{display:grid;grid-template-columns:24px 8.5em 1fr auto;gap:10px;align-items:center;padding:8px 12px;border-bottom:1px solid var(--line);font-size:13px;min-height:44px}
+.delrow:last-child{border-bottom:0}
+.delrow input{width:20px;height:20px}
+.tools input{min-height:44px;padding:0 12px;border:2px solid var(--line);border-radius:6px;background:var(--surface-2);min-width:0}
+.warn{margin-top:12px;padding:12px 14px;border:2px solid var(--accent);border-radius:8px;background:var(--accent-soft);font-weight:700;font-size:14px}
+.warn .tools{margin-top:10px}
+/* 来場者向けボード */
+.board{padding:8px 0 24px}
+.board-top{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:18px}
+.board-title{font-size:clamp(26px,5vw,52px);margin:0 0 20px}
+.board-wait{font-size:clamp(18px,3vw,30px);font-weight:900;line-height:1.7;max-width:28em}
+.board-rank{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:clamp(10px,1.8vw,20px)}
+.board-rank li{display:grid;grid-template-columns:2.2em minmax(10em,38%) 1fr 3em;gap:12px;align-items:center;font-size:clamp(15px,2.4vw,26px);font-weight:700}
+.board-rank .rk{font-family:var(--font-display);color:var(--accent);font-size:1.5em;text-align:center}
+.board-rank .tr{height:clamp(18px,3vw,32px);background:var(--surface-2);border-radius:2px;overflow:hidden}
+.board-rank .fl{height:100%;background:var(--rail)}
+.board-rank li:first-child .fl{background:var(--accent)}
+.board-rank .ct{text-align:right}
+.board .dots{display:flex;gap:10px;justify-content:center;margin-top:28px}
+.board .dots span{width:12px;height:12px;border-radius:50%;background:var(--line)}
+.board .dots span.on{background:var(--accent)}

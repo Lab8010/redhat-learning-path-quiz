@@ -1,6 +1,6 @@
 import './fonts';
 import './style.css';
-import { IDLE_MS, LINKS, STAFF_PIN, ANON_FORM, API_BASE } from './config';
+import { IDLE_MS, LINKS, STAFF_PIN, ANON_FORM, API_BASE, BOARD_MIN } from './config';
 import { CERTS, EXPS, LVN, NEEDS, NEED_KEYS, PRODS, QS, ROLES, STYLES, TIMINGS, type Answers, type CompleteAnswers, type Domain, type Response } from './model';
 import { recommend, type Rec } from './recommend';
 import { agg, csvOf } from './aggregate';
@@ -8,14 +8,15 @@ import { createLocalStorage } from './storage';
 import { flushPending, personalFormUrl } from './forms';
 import { sampleResponses } from './sample';
 import { qrSvg } from './qr';
-import { fetchRows } from './remote';
+import { deleteRows, fetchRows, type DeleteTarget } from './remote';
+import { SERVICE_BY_STYLE, STYLE_SERVICE_LABEL } from './services';
 
 const store = createLocalStorage();
 const SAMPLES = sampleResponses();
 const app = document.getElementById('app')!;
 const esc = (s: unknown) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
 
-type View = 'start' | 'q' | 'result' | 'pin' | 'staff';
+type View = 'start' | 'q' | 'result' | 'pin' | 'staff' | 'board';
 const emptyAnswers = (): Answers => ({ role: null, needs: [], exp: null, prods: [], timing: null, style: null });
 const S = {
   src: (API_BASE ? 'remote' : 'local') as 'remote' | 'local',
@@ -23,6 +24,10 @@ const S = {
   tab: 'dash', samples: import.meta.env.DEV || location.hash === '#demo', pinErr: false, confirmClear: false, csv: null as string | null,
 };
 let lastActive = Date.now();
+/** 来場者向けボードの表示位置と、Cloudflare 上のデータ削除の操作状態 */
+const B = { i: 0 };
+const BOARD_PANELS = 3;
+const D = { sel: [] as string[], confirm: '' as '' | 'ids' | 'since', since: '', typed: '', busy: false, msg: '' };
 
 /* スタッフ画面の「全体」表示: 全端末の回答を Worker の API から読む。合言葉はタブを閉じると消える */
 const TOKEN_KEY = 'rhsc26_staff_token';
@@ -36,7 +41,7 @@ async function refreshRemote() {
   if (res.ok) { R.rows = res.rows; R.at = Date.now(); R.err = ''; }
   else if (res.error === 'unauthorized') { setToken(''); R.rows = null; R.err = '合言葉が違います。'; }
   else R.err = res.error === 'network' ? '取得できませんでした(回線を確認してください)。前回の表示を残しています。' : '想定外の応答でした。API の設定を確認してください。';
-  if (S.view === 'staff' && S.src === 'remote') render();
+  if ((S.view === 'staff' || S.view === 'board') && S.src === 'remote') render();
 }
 
 function resetAnswers() { S.a = emptyAnswers(); S.qi = 0; S.res = null; S.recs = []; }
@@ -97,17 +102,12 @@ function vQ() {
 }
 
 function styleCta() {
-  const st = S.a.style as keyof typeof STYLES;
-  const map = {
-    ilt: { h: '講師付きのコースで集中して学ぶ', p: 'クラスルームまたはオンラインの講師付きコースで、実機演習を通して短期間で身につけられます。', b: ['コースと試験の一覧', LINKS.allCourses] },
-    sub: { h: 'ラーニングサブスクリプションを無料で試す', p: 'RHEL・OpenShift・OpenStack・Ansible・AI まで学び放題。まずはトライアルで学習体験を確かめてください。', b: ['無料トライアルを開始', LINKS.trial] },
-    self: { h: '実技試験の認定資格で実力を証明する', p: 'Red Hat の認定試験は実機を操作する実技形式です。上のおすすめから目標の資格を選べます。', b: ['認定資格の一覧', LINKS.certPage] },
-    team: { h: 'チーム全体の育成計画を相談する', p: '部署や会社単位の育成計画は、ブースのスタッフにお声がけください。オンラインでも相談できます。', b: ['トレーニングのお問い合わせ', LINKS.contact] },
-  }[st]!;
-  const showTrial = st !== 'sub';
-  return `<section class="cta"><h2>${esc(map.h)}</h2><p>${esc(map.p)}</p>
-    <div class="row"><a class="btn primary" href="${map.b[1]}" target="_blank" rel="noopener" data-act="trial">${esc(map.b[0])}</a>
-    ${showTrial ? `<a class="btn" href="${LINKS.trial}" target="_blank" rel="noopener" data-act="trial">学び放題を無料で試す</a>` : ''}</div>
+  const g = SERVICE_BY_STYLE[S.a.style as keyof typeof STYLES];
+  const cards = g.services.map((v) => `<a class="svc" href="${esc(v.url)}" target="_blank" rel="noopener" data-act="trial"><b>${esc(v.name)}</b><span>${esc(v.desc)}</span></a>`).join('');
+  return `<section class="cta"><h2>${esc(g.h)}</h2><p>${esc(g.p)}</p>
+    <div class="svcs">${cards}</div>
+    <div class="row"><a class="btn primary" href="${esc(g.main[1])}" target="_blank" rel="noopener" data-act="trial">${esc(g.main[0])}</a>
+    ${g.trial ? `<a class="btn" href="${LINKS.trial}" target="_blank" rel="noopener" data-act="trial">学び放題を無料で試す</a>` : ''}</div>
     <p><a class="alt" href="${LINKS.certList}" target="_blank" rel="noopener">資格の全一覧とロードマップを見る</a></p></section>`;
 }
 function vResult() {
@@ -164,11 +164,42 @@ function allData() {
   return { real, list: S.samples ? real.concat(SAMPLES) : real };
 }
 
+const fmtTime = (ts: number) => new Date(ts).toLocaleString('ja-JP', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false });
+function deletePanel() {
+  const rows = (R.rows || []).slice().sort((a, b) => b.ts - a.ts);
+  const latest = rows.slice(0, 15);
+  const sinceMs = D.since ? new Date(D.since).getTime() : NaN;
+  const sinceN = Number.isNaN(sinceMs) ? 0 : rows.filter((r) => r.ts >= sinceMs).length;
+  const list = latest.map((r) => `<label class="delrow"><input type="checkbox" data-act="del-sel" data-v="${esc(r.id)}" ${D.sel.includes(r.id) ? 'checked' : ''}><span class="mono">${esc(fmtTime(r.ts))}</span><span>${esc(ROLES[r.role] || r.role)} / ${esc(r.needs.map((n) => NEEDS[n].l).join('・'))}</span><span class="mono">${esc(r.top[0] || '')}</span></label>`).join('');
+  const confirm = D.confirm === 'ids' ? `<div class="warn">選んだ ${D.sel.length} 件を Cloudflare から削除します。元に戻せません。<div class="tools"><button class="btn small primary" data-act="del-yes" ${D.busy ? 'disabled' : ''}>削除する</button><button class="btn small" data-act="del-cancel">キャンセル</button></div></div>`
+    : D.confirm === 'since' ? `<div class="warn">${esc(fmtTime(sinceMs))} 以降の ${sinceN} 件を Cloudflare から削除します。元に戻せません。<div class="tools"><button class="btn small primary" data-act="del-yes" ${D.busy ? 'disabled' : ''}>削除する</button><button class="btn small" data-act="del-cancel">キャンセル</button></div></div>` : '';
+  return `<div class="panel"><h2>Cloudflare 上の回答を削除<small>元に戻せません。Google Form(スプレッドシート)の行は消えません</small></h2>
+    ${D.msg ? `<p class="note" style="margin:0 0 10px"><b>${esc(D.msg)}</b></p>` : ''}
+    <h3 class="sub">新しい順に15件から選ぶ</h3>
+    <div class="dellist">${list || '<p class="note">回答がありません。</p>'}</div>
+    <div class="tools" style="margin-top:10px"><button class="btn small" data-act="del-ask-ids" ${D.sel.length && !D.confirm ? '' : 'disabled'}>選んだ ${D.sel.length} 件を削除</button></div>
+    <h3 class="sub">この日時以降をまとめて削除(リハーサル後など)</h3>
+    <div class="tools"><input type="datetime-local" id="since" value="${esc(D.since)}" aria-label="削除する日時の開始"><button class="btn small" data-act="del-ask-since" ${sinceN && !D.confirm ? '' : 'disabled'}>${sinceN} 件を削除</button></div>
+    ${confirm}
+    <h3 class="sub">全件を削除</h3>
+    <div class="tools"><input id="delTyped" placeholder="「削除」と入力" value="${esc(D.typed)}" aria-label="全件削除の確認" autocomplete="off"><button class="btn small primary" data-act="del-all" ${D.typed === '削除' && !D.busy ? '' : 'disabled'}>全 ${rows.length} 件を削除</button></div>
+  </div>`;
+}
+async function doDelete(target: DeleteTarget) {
+  D.busy = true; render();
+  const r = await deleteRows(`${API_BASE}/api/delete`, getToken(), target);
+  D.busy = false; D.confirm = ''; D.sel = []; D.typed = '';
+  if (r.ok) D.msg = `${r.deleted} 件を削除しました。`;
+  else if (r.error === 'unauthorized') { setToken(''); R.rows = null; R.err = '合言葉が違います。'; D.msg = ''; }
+  else D.msg = r.error === 'network' ? '削除できませんでした(回線を確認してください)。' : '削除できませんでした(指定が正しくありません)。';
+  await refreshRemote(); render();
+}
+
 function vStaff() {
   const { real, list } = allData();
   const g = agg(list);
   const needLabels = Object.fromEntries(NEED_KEYS.map((k) => [k, NEEDS[k].l]));
-  const tabs = [['dash', '集計'], ['mon', 'モニター表示'], ['data', 'データ']].map((t) => `<button class="tab${S.tab === t[0] ? ' on' : ''}" data-act="tab" data-v="${t[0]}">${t[1]}</button>`).join('');
+  const tabs = [['dash', '集計'], ['data', 'データ']].map((t) => `<button class="tab${S.tab === t[0] ? ' on' : ''}" data-act="tab" data-v="${t[0]}">${t[1]}</button>`).join('') + `<button class="tab" data-act="board">来場者向けボードを表示</button>`;
   const remote = S.src === 'remote';
   const sampleBadge = !remote && S.samples ? '<span class="badge">サンプル込み</span>' : '';
   const unsent = real.filter((r) => !r.synced).length;
@@ -182,10 +213,6 @@ function vStaff() {
       ${R.err ? `<div class="err">${esc(R.err)}</div>` : ''}
       <button class="btn primary" type="submit">全体の集計を開く</button>
       <p class="note">合言葉は、Worker に登録した STAFF_TOKEN の値です。このタブを閉じると忘れます。</p></form>`;
-  } else if (S.tab === 'mon') {
-    body = `<section class="mon"><div class="mon-total"><b class="mono" style="font-family:var(--font-display)">${g.n}</b><span>人が回答${sampleBadge}</span></div>
-      <h2 style="font-size:clamp(16px,2.6vw,24px);font-weight:900;margin-bottom:14px">社内で学習や強化が必要なテクノロジー</h2>
-      ${barsOf(g.need, needLabels, g.n)}</section>`;
   } else if (S.tab === 'data') {
     body = `<div class="panel"><h2>データの操作${remote ? '<small>CSV は全体、削除・送信はこの端末の分</small>' : ''}</h2><div class="tools">
       <button class="btn small" data-act="csv">CSVをコピー</button>
@@ -194,7 +221,7 @@ function vStaff() {
       </div>
       ${S.csv !== null ? `<textarea class="csv" id="csvbox" readonly aria-label="CSV">${esc(S.csv)}</textarea><p class="note">コピーできなかったため、全選択してコピーしてください。</p>` : ''}
       <p class="note">この端末の実データ ${real.length} 件(未送信 ${unsent} 件) / サンプル ${SAMPLES.length} 件。サンプルは画面表示専用で、保存も送信もされません。${ANON_FORM.enabled || API_BASE ? '' : '匿名データの送信は無効です(config.ts)。'}</p>
-      ${unsent ? `<div class="tools" style="margin-top:10px"><button class="btn small" data-act="flush">未送信の回答を今すぐ送る</button></div>` : ''}</div>`;
+      ${unsent ? `<div class="tools" style="margin-top:10px"><button class="btn small" data-act="flush">未送信の回答を今すぐ送る</button></div>` : ''}</div>${remote ? deletePanel() : ''}`;
   } else {
     const crossRows = Object.keys(ROLES).map((r) => {
       const mx = Math.max(1, ...NEED_KEYS.map((n) => g.cross[r][n]));
@@ -218,12 +245,40 @@ function vStaff() {
     </div>`;
   }
   return header(`<button class="link-btn" data-act="abort">スタッフ画面を閉じる</button>`) + `
-  <h1 class="display" style="font-size:26px;margin-bottom:14px">ブース集計${S.tab !== 'mon' ? sampleBadge : ''}</h1>
+  <h1 class="display" style="font-size:26px;margin-bottom:14px">ブース集計${sampleBadge}</h1>
   ${srcSwitch}${needToken ? '' : `<div class="tabs">${tabs}</div>`}${status}${body}`;
 }
 
+function vBoard() {
+  const { list } = allData();
+  const g = agg(list);
+  const needLabels = Object.fromEntries(NEED_KEYS.map((k) => [k, NEEDS[k].l]));
+  let title = '', body = '';
+  if (g.n < BOARD_MIN) {
+    title = '診断にご参加ください';
+    body = `<p class="board-wait">いま集計中です。あと ${BOARD_MIN - g.n} 人の回答が集まると、みなさんの人気がここに表示されます。</p>`;
+  } else if (B.i === 0) {
+    title = 'みなさんが学びたいテクノロジー';
+    body = barsOf(g.need, needLabels, g.n);
+  } else if (B.i === 1) {
+    title = '人気のおすすめ資格トップ5';
+    const top = Object.keys(g.rec).sort((x, y) => g.rec[y] - g.rec[x] || x.localeCompare(y)).slice(0, 5);
+    const max = g.rec[top[0]] || 1;
+    body = `<ol class="board-rank">${top.map((ex, i) => { const c = CERTS.find((z) => z.exam === ex); return `<li><span class="rk">${i + 1}</span><span class="nm"><span class="mono">${esc(ex)}</span> ${esc(c ? c.n : '')}</span><span class="tr"><span class="fl" style="display:block;width:${Math.round((g.rec[ex] / max) * 100)}%"></span></span><span class="mono ct">${g.rec[ex]}</span></li>`; }).join('')}</ol><p class="note">診断で、おすすめに出た回数</p>`;
+  } else {
+    title = '人気の学び方と学習サービス';
+    const labels = Object.fromEntries(Object.keys(STYLES).map((k) => [k, `${STYLES[k]}(${STYLE_SERVICE_LABEL[k as keyof typeof STYLES]})`]));
+    body = barsOf(g.style, labels, g.n);
+  }
+  const dots = g.n < BOARD_MIN ? '' : `<div class="dots" aria-hidden="true">${Array.from({ length: BOARD_PANELS }, (_, i) => `<span class="${i === B.i ? 'on' : ''}"></span>`).join('')}</div>`;
+  return `<section class="mon board">
+    <div class="board-top"><div class="brand"><i></i>Red Hat Summit: Connect 2026 Tokyo ・ 教育サービスブース</div><button class="link-btn" data-act="board-exit" style="opacity:.55">スタッフ画面へ戻る</button></div>
+    <div class="mon-total"><b class="mono" style="font-family:var(--font-display)">${g.n}</b><span>人が診断に回答${S.src === 'local' && S.samples ? '<span class="badge">サンプル込み</span>' : ''}</span></div>
+    <h1 class="display board-title">${esc(title)}</h1>${body}${dots}</section>`;
+}
+
 function render() {
-  app.innerHTML = { start: vStart, q: vQ, result: vResult, pin: vPin, staff: vStaff }[S.view]();
+  app.innerHTML = { start: vStart, q: vQ, result: vResult, pin: vPin, staff: vStaff, board: vBoard }[S.view]();
   if (S.view === 'staff' && S.tab === 'data' && S.csv !== null) { const b = document.getElementById('csvbox') as HTMLTextAreaElement | null; if (b) { b.focus(); b.select(); } }
   if (S.view === 'pin') document.getElementById('pin')?.focus();
 }
@@ -273,6 +328,17 @@ document.addEventListener('click', (e) => {
   else if (act === 'again') { resetAnswers(); go('start'); }
   else if (act === 'tab') { S.tab = v; S.csv = null; S.confirmClear = false; render(); }
   else if (act === 'src') { S.src = v as 'remote' | 'local'; S.csv = null; render(); void refreshRemote(); }
+  else if (act === 'board') { B.i = 0; go('board'); }
+  else if (act === 'board-exit') { go('staff'); }
+  else if (act === 'del-sel') { const i = D.sel.indexOf(v); if (i >= 0) D.sel.splice(i, 1); else D.sel.push(v); D.msg = ''; render(); }
+  else if (act === 'del-ask-ids') { D.confirm = 'ids'; D.msg = ''; render(); }
+  else if (act === 'del-ask-since') { D.confirm = 'since'; D.msg = ''; render(); }
+  else if (act === 'del-cancel') { D.confirm = ''; render(); }
+  else if (act === 'del-yes') {
+    if (D.confirm === 'ids' && D.sel.length) void doDelete({ mode: 'ids', ids: D.sel.slice() });
+    else if (D.confirm === 'since' && D.since) void doDelete({ mode: 'since', since: new Date(D.since).getTime() });
+  }
+  else if (act === 'del-all') { if (D.typed === '削除') void doDelete({ mode: 'all' }); }
   else if (act === 'samples') { S.samples = !S.samples; render(); }
   else if (act === 'clear') { S.confirmClear = true; render(); }
   else if (act === 'clear-no') { S.confirmClear = false; render(); }
@@ -283,6 +349,17 @@ document.addEventListener('click', (e) => {
     const fallback = () => { S.csv = text; render(); };
     try { navigator.clipboard.writeText(text).then(() => { S.csv = null; el.textContent = 'コピーしました'; }, fallback); } catch { fallback(); }
   }
+});
+document.addEventListener('input', (e) => {
+  const el = e.target as HTMLInputElement;
+  if (el.id === 'delTyped') {
+    D.typed = el.value.trim();
+    document.querySelector<HTMLButtonElement>('[data-act="del-all"]')!.disabled = D.typed !== '削除' || D.busy;
+  }
+});
+document.addEventListener('change', (e) => {
+  const el = e.target as HTMLInputElement;
+  if (el.id === 'since') { D.since = el.value; D.confirm = ''; render(); }
 });
 document.addEventListener('submit', (e) => {
   if ((e.target as HTMLElement).id === 'pinform') {
@@ -299,9 +376,10 @@ document.addEventListener('submit', (e) => {
 
 setInterval(() => {
   if ((S.view === 'q' || S.view === 'result') && Date.now() - lastActive > IDLE_MS) { resetAnswers(); go('start'); }
-  if (S.view === 'staff' && S.tab === 'mon' && S.src === 'local') render();
 }, 3000);
-setInterval(() => { if (S.view === 'staff' && S.src === 'remote') void refreshRemote(); }, 10_000);
+// 来場者向けボードは、8秒ごとに表示を切り替える
+setInterval(() => { if (S.view === 'board') { B.i = (B.i + 1) % BOARD_PANELS; render(); } }, 8000);
+setInterval(() => { if ((S.view === 'staff' || S.view === 'board') && S.src === 'remote') void refreshRemote(); }, 10_000);
 // 未送信の回答は、回線が戻ったときと30秒ごとに再送する
 window.addEventListener('online', () => void flushPending(store));
 setInterval(() => void flushPending(store), 30_000);

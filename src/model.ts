@@ -32,7 +32,7 @@ export const NEEDS: Record<Domain, { l: string; s: string }> = {
   sec: { l: 'セキュリティ', s: '脆弱性対応・堅牢化' },
 };
 export const NEED_KEYS = Object.keys(NEEDS) as Domain[];
-export const ROLES: Record<string, string> = { infra: 'インフラ・運用', sre: 'SRE・プラットフォーム', dev: 'アプリ開発', planner: '学習・育成の計画', partner: '営業・SE・パートナー', other: '学生・その他' };
+export const ROLES: Record<string, string> = { infra: 'インフラ・運用', sre: 'SRE・プラットフォーム', dev: 'アプリ開発', planner: '学習・育成の計画', partner: '営業・SE・パートナー', other: 'その他' };
 /** 旧コード(端末に残っている回答・過去の送信分)を現行の役割に読み替える */
 export const ROLE_ALIAS: Record<string, string> = { mgr: 'planner' };
 export const EXPS: Record<string, string> = { 1: 'これから学ぶ', 2: '基本操作ができる', 3: '実務で運用中', 4: '設計・構築をリード' };
@@ -87,7 +87,7 @@ export interface Question {
 
 export const QS: Question[] = [
   { k: 'role', type: 'one', t: 'あなたの立場に近いものは？', h: 'ひとつ選んでください', cols: 2,
-    o: [['infra', 'インフラ・運用の担当者', 'サーバ、ネットワーク、基盤の構築と運用'], ['sre', 'SRE・プラットフォームの担当者', '開発基盤、自動化、信頼性'], ['dev', 'アプリケーション開発者', 'コンテナ、マイクロサービス、API'], ['planner', '学習・育成を計画する人', '部門マネージャー、技術リーダー、人事・教育担当など。メンバーの育成計画を立てる方'], ['partner', '営業・SE(システムエンジニア)・パートナー', 'お客様への提案や支援のために知りたい方'], ['other', '学生・その他', '情報収集中の方など']] },
+    o: [['infra', 'インフラ・運用の担当者', 'サーバ、ネットワーク、基盤の構築と運用'], ['sre', 'SRE・プラットフォームの担当者', '開発基盤、自動化、信頼性'], ['dev', 'アプリケーション開発者', 'コンテナ、マイクロサービス、API'], ['planner', '学習・育成を計画する人', '部門マネージャー、技術リーダー、人事・教育担当など。メンバーの育成計画を立てる方'], ['partner', '営業・SE(システムエンジニア)・パートナー', 'お客様への提案や支援のために知りたい方'], ['other', 'その他', '学生、新入社員など実務にまだ配属されていない方、情報収集中の方など']] },
   { k: 'needs', type: 'multi', max: 2, t: 'あなた（またはチーム）が学習・強化したいテクノロジー領域は？', h: 'いちばん必要なものから順に、最大2つ選んでください', cols: 2,
     o: NEED_KEYS.map((k) => [k, NEEDS[k].l, NEEDS[k].s] as Opt) },
   { k: 'exp', type: 'one', t: 'あなた（または対象メンバー）のいまのスキルレベルは？', h: '選んだ領域について、いちばん近いものを選んでください。チーム等の場合は、経験が少ない方に合わせてください', cols: 1,

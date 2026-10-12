@@ -35,10 +35,15 @@ export const API_BASE = 'https://redhat-learning-path-quiz-api.lab8010.workers.d
 /** スタッフ画面の簡易 PIN。端末内の確認であり認証ではない(公開リポジトリで見える値)。 */
 export const STAFF_PIN = '1029';
 
+/** 来場者向けボードで、この件数に満たないうちは「集計中」と表示する(1人の回答が目立たないように) */
+export const BOARD_MIN = 10;
+
 /** 操作がない時間(ミリ秒)で開始画面に戻る */
 export const IDLE_MS = 120_000;
 
 export const LINKS = {
+  rhls: 'https://www.redhat.com/ja/services/training/learning-subscription',
+  rhlsBuy: 'https://www.redhat.com/ja/services/training/learning-subscription/how-to-buy',
   trial: 'https://www.redhat.com/ja/services/training/learning-subscription/trial',
   allCourses: 'https://www.redhat.com/ja/services/training/all-courses-exams',
   certPage: 'https://www.redhat.com/ja/services/certifications',

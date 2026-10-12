@@ -7,7 +7,7 @@ export function agg(list: Response[], now = new Date()) {
     n: list.length,
     need: zero(NEED_KEYS), first: zero(NEED_KEYS), role: zero(Object.keys(ROLES)), exp: zero([1, 2, 3, 4]),
     timing: zero(Object.keys(TIMINGS)), style: zero(Object.keys(STYLES)), prods: zero(Object.keys(PRODS)),
-    cross: {} as Record<string, Record<string, number>>, top1: {} as Record<string, number>,
+    cross: {} as Record<string, Record<string, number>>, top1: {} as Record<string, number>, rec: {} as Record<string, number>,
     trial: 0, forms: 0, today: 0,
   };
   Object.keys(ROLES).forEach((r) => (g.cross[r] = zero(NEED_KEYS)));
@@ -18,6 +18,7 @@ export function agg(list: Response[], now = new Date()) {
     g.role[r.role]++; g.exp[r.exp]++; g.timing[r.timing]++; g.style[r.style]++;
     r.prods.forEach((p) => g.prods[p]++);
     if (r.top[0]) g.top1[r.top[0]] = (g.top1[r.top[0]] || 0) + 1;
+    r.top.forEach((t) => { g.rec[t] = (g.rec[t] || 0) + 1; });
     if (r.trial) g.trial++;
     if (r.forms) g.forms++;
     if (r.ts >= d0.getTime()) g.today++;
