@@ -1,16 +1,6 @@
-import { ANON_FORM, API_BASE, PERSONAL_FORM } from './config';
+import { ANON_FORM, API_BASE } from './config';
 import type { Response } from './model';
 import type { Storage } from './storage';
-
-/** 個人情報用 Forms への事前入力リンク。個人を特定しない値(資格コード・領域・学び方)だけを渡す */
-export function personalFormUrl(r: Pick<Response, 'top' | 'needs' | 'style'>): string {
-  const p = new URLSearchParams({ usp: 'pp_url' });
-  const e = PERSONAL_FORM.entries;
-  if (e.firstCert && r.top[0]) p.set(e.firstCert, r.top[0]);
-  if (e.needs && r.needs.length) p.set(e.needs, r.needs.join(','));
-  if (e.style) p.set(e.style, r.style);
-  return `${PERSONAL_FORM.url}?${p}`;
-}
 
 /** 日本時間の ISO 8601(例: 2026-10-12T13:31:43+09:00) */
 export function toJstIso(ts: number): string {

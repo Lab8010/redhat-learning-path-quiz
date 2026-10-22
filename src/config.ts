@@ -1,16 +1,22 @@
 /* 運用設定。本番の値に差し替えるのはこのファイルだけ。
    ここには個人を特定する情報を置かない。 */
 
-/** 個人情報を取る、会社承認の Google Forms(回答者用リンク)。ダミー値: 本番の URL に差し替える */
-export const PERSONAL_FORM = {
-  url: 'https://docs.google.com/forms/d/e/DUMMY_FORM_ID/viewform',
-  /** 事前入力する項目の entry.xxxx(空文字なら送らない)。個人を特定しない値だけ。 */
+/** 個人情報を取る、会社承認の Google フォーム(回答者用リンク)。
+    事前入力してよいのは診断結果の6欄だけ。同意・会社名・お名前・メール・相談内容の entry は、誤用を防ぐためここに置かない。 */
+export const FORM = {
+  base: 'https://docs.google.com/forms/d/e/1FAIpQLSepJukRs6pEupkKpa34XIcWfjN3PS9w2nu9rgoi_H1GoKdDkA/viewform',
   entries: {
-    firstCert: 'entry.0000000001', // 最初の一歩の資格コード
-    needs: 'entry.0000000002', // 必要な領域(最大2つ)
-    style: 'entry.0000000003', // 学び方
+    needs: 'entry.1614265366', // 必要な領域
+    first: 'entry.1201212820', // 最初の一歩の試験コード
+    timing: 'entry.322112944', // 学習を始めたい時期
+    style: 'entry.1375826699', // 学び方
+    top5: 'entry.2146752632', // おすすめ5件の試験コード(任意)
+    profile: 'entry.198304846', // 役割 / スキルレベル(任意)
   },
-};
+} as const;
+
+/** 事前入力リンクの長さの上限(QRコードが細かくなりすぎないように) */
+export const FORM_URL_MAX = 700;
 
 /** 匿名の回答を溜める Google Form(formResponse の送信先と、各質問の entry) */
 export const ANON_FORM = {

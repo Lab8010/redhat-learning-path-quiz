@@ -157,7 +157,7 @@ textarea.csv{width:100%;min-height:140px;margin-top:12px;padding:10px;font:12px/
 @media (prefers-reduced-motion:no-preference){.opt,.btn{transition:background .12s,border-color .12s}}
 
 .mail .qr{display:grid;gap:6px;justify-items:center;margin-top:14px}
-.mail .qr svg{width:168px;height:168px;background:#fff;padding:8px;border-radius:6px}
+.mail .qr svg{width:176px;height:176px;background:#fff;padding:16px;border-radius:6px}
 .mail .qr small{color:var(--muted);font-size:12px}
 .mail .btn{text-align:center}
 
@@ -192,3 +192,4 @@ textarea.csv{width:100%;min-height:140px;margin-top:12px;padding:10px;font:12px/
 .board .dots{display:flex;gap:10px;justify-content:center;margin-top:28px}
 .board .dots span{width:12px;height:12px;border-radius:50%;background:var(--line)}
 .board .dots span.on{background:var(--accent)}
+.stat .l small{display:block;font-weight:400;font-size:11px;margin-top:2px}

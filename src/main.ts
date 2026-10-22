@@ -5,7 +5,8 @@ import { CERTS, EXPS, LVN, NEEDS, NEED_KEYS, PRODS, QS, ROLES, STYLES, TIMINGS, 
 import { recommend, type Rec } from './recommend';
 import { agg, csvOf } from './aggregate';
 import { createLocalStorage } from './storage';
-import { flushPending, personalFormUrl } from './forms';
+import { flushPending } from './forms';
+import { buildFormUrl } from './formUrl';
 import { sampleResponses } from './sample';
 import { qrSvg } from './qr';
 import { deleteRows, fetchRows, type DeleteTarget } from './remote';
@@ -123,11 +124,11 @@ function vResult() {
         <a href="${c.curl}" target="_blank" rel="noopener">コース詳細</a><a href="${c.url}" target="_blank" rel="noopener">試験詳細</a></div>
     </div></li>`;
   }).join('');
-  const formUrl = personalFormUrl(S.res!);
+  const formUrl = buildFormUrl(S.res!);
   const mail = `
     <section class="mail"><h2>結果とご案内をメールで受け取る(任意)</h2>
-      <p>Google フォームが別のタブで開きます。お名前・メールアドレスはフォームでご入力ください(この診断アプリには保存されません)。診断結果の資格コードと必要な領域は、フォームに自動で入ります。</p>
-      <a class="btn small primary" href="${esc(formUrl)}" target="_blank" rel="noopener" data-act="forms">フォームを開く</a>
+      <p>Google フォームが別のタブで開きます。お名前・メールアドレスはフォームでご入力ください(この診断アプリには保存されません)。診断結果の資格コードと必要な領域は、フォームに自動で入ります。入った内容は、フォーム上で修正できます。</p>
+      <a class="btn small primary" href="${esc(formUrl)}" target="_blank" rel="noopener noreferrer" data-act="forms">フォームを開く</a>
       <div class="qr">${qrSvg(formUrl)}<small>別の端末で開く場合は、QRコードを読み取ってください</small></div></section>`;
   return header() + `
   <div class="res-head"><h1 class="display">あなたに合ったトレーニングコースと資格はこちら！</h1></div>
@@ -233,7 +234,7 @@ function vStaff() {
       <div class="stat"><div class="n">${g.n}</div><div class="l">回答数</div></div>
       <div class="stat"><div class="n">${g.today}</div><div class="l">本日の回答</div></div>
       ${remote ? '' : `<div class="stat"><div class="n">${g.trial}</div><div class="l">トライアル等を開いた人</div></div>
-      <div class="stat"><div class="n">${g.forms}</div><div class="l">フォームを開いた人</div></div>`}
+      <div class="stat"><div class="n">${g.forms}</div><div class="l">フォームを開いた人<small>ボタンを押した回数。QRの読み取りは数えられません</small></div></div>`}
     </div>
     <div class="panel"><h2>必要な領域<small>1人2つまで選択。割合は回答者数に対する比率</small></h2>${barsOf(g.need, needLabels, g.n)}</div>
     <div class="panel"><h2>役割 × 必要な領域<small>人数(選択数)</small></h2><div class="scroll-x"><table class="x"><thead><tr><th>役割</th>${NEED_KEYS.map((n) => `<th>${esc(NEEDS[n].l)}</th>`).join('')}<th>回答者</th></tr></thead><tbody>${crossRows}</tbody></table></div></div>
